@@ -18,6 +18,12 @@ function AuthWrapper() {
     return onAuthStateChanged(auth, async (u) => {
       setUser(u);
       if (u) {
+        // Check if manual select mode
+        const manualSelect = sessionStorage.getItem("dance-manual-select");
+        if (manualSelect) {
+          setLoading(false);
+          return;
+        }
         // Check localStorage first
         const stored = localStorage.getItem("dance-family-" + u.uid);
         if (stored) {
@@ -59,6 +65,7 @@ function AuthWrapper() {
       const id = "fam-" + Date.now().toString(36);
       await createFamily(id, user.email);
       localStorage.setItem("dance-family-" + user.uid, id);
+      sessionStorage.removeItem("dance-manual-select");
       setFamilyId(id);
     } catch (e) {
       console.error("Family creation error:", e);
@@ -73,6 +80,7 @@ function AuthWrapper() {
     try {
       await createFamily(joinCode.trim(), user.email);
       localStorage.setItem("dance-family-" + user.uid, joinCode.trim());
+      sessionStorage.removeItem("dance-manual-select");
       setFamilyId(joinCode.trim());
     } catch (e) {
       alert("ファミリーIDが見つかりません。正しいIDを入力してください。");
@@ -86,8 +94,9 @@ function AuthWrapper() {
   };
 
   const handleLeaveFamily = () => {
-    if (confirm("ファミリーから離れますか？（データは削除されません）")) {
+    if (confirm("別のファミリーに切り替えますか？")) {
       localStorage.removeItem("dance-family-" + user.uid);
+      sessionStorage.setItem("dance-manual-select", "true");
       setFamilyId(null);
       setMode(null);
     }

@@ -511,6 +511,7 @@ export default function App({ user, familyId, onLogout, onLeaveFamily }) {
         {user && (
           <div style={{ position: "absolute", top: 8, right: 12, display: "flex", gap: 6, alignItems: "center" }}>
             <span style={{ fontSize: 10, opacity: 0.7 }}>{user.displayName}</span>
+            <button onClick={onLeaveFamily} style={{ background: "rgba(255,255,255,0.2)", border: "none", borderRadius: 8, padding: "3px 8px", color: "#fff", fontSize: 10, cursor: "pointer", fontFamily: FONT }}>切替</button>
             <button onClick={onLogout} style={{ background: "rgba(255,255,255,0.2)", border: "none", borderRadius: 8, padding: "3px 8px", color: "#fff", fontSize: 10, cursor: "pointer", fontFamily: FONT }}>ログアウト</button>
           </div>
         )}
