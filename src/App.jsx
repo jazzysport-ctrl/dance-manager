@@ -446,6 +446,19 @@ export default function App({ user, familyId, onLogout, onLeaveFamily }) {
             <button onClick={onLogout} style={{ background: "rgba(255,255,255,0.2)", border: "none", borderRadius: 8, padding: "3px 8px", color: "#fff", fontSize: 10, cursor: "pointer", fontFamily: FONT }}>ログアウト</button>
           </div>
         )}
+        {familyId && (
+          <div style={{ position: "absolute", top: 8, left: 12, display: "flex", gap: 4, alignItems: "center" }}>
+            <button
+              onClick={() => {
+                navigator.clipboard.writeText(familyId);
+                alert("ファミリーIDをコピーしました！\n\n" + familyId + "\n\nこのIDを家族に共有してください。");
+              }}
+              style={{ background: "rgba(255,255,255,0.2)", border: "none", borderRadius: 8, padding: "3px 8px", color: "#fff", fontSize: 10, cursor: "pointer", fontFamily: FONT, display: "flex", alignItems: "center", gap: 3 }}
+            >
+              📋 ID共有
+            </button>
+          </div>
+        )}
         {data.children.length > 0 ? (
           <div style={{ display: "flex", gap: 5, justifyContent: "center", marginTop: 8, flexWrap: "wrap" }}>
             {data.children.map((c, i) => (
