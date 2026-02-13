@@ -34,11 +34,22 @@ function AuthWrapper() {
     }
   };
 
+  const [creating, setCreating] = useState(false);
+
   const handleCreateFamily = async () => {
-    const id = "fam-" + Date.now().toString(36);
-    await createFamily(id, user.email);
-    localStorage.setItem("dance-family-" + user.uid, id);
-    setFamilyId(id);
+    if (creating) return;
+    setCreating(true);
+    try {
+      const id = "fam-" + Date.now().toString(36);
+      await createFamily(id, user.email);
+      localStorage.setItem("dance-family-" + user.uid, id);
+      setFamilyId(id);
+    } catch (e) {
+      console.error("Family creation error:", e);
+      alert("ファミリー作成に失敗しました: " + e.message);
+    } finally {
+      setCreating(false);
+    }
   };
 
   const handleJoinFamily = async () => {
@@ -137,13 +148,13 @@ function AuthWrapper() {
               <p style={{ fontSize: 13, color: "#475569", marginBottom: 16 }}>
                 新しいファミリーを作成します。作成後にファミリーIDを家族に共有してください。
               </p>
-              <button onClick={handleCreateFamily} style={{
+              <button onClick={handleCreateFamily} disabled={creating} style={{
                 padding: "14px 32px", borderRadius: 14, border: "none", fontFamily: FONT,
-                background: "linear-gradient(135deg,#6366f1,#8b5cf6)", color: "#fff",
-                fontSize: 15, fontWeight: 700, cursor: "pointer", marginBottom: 12,
-                boxShadow: "0 4px 12px rgba(99,102,241,0.3)",
+                background: creating ? "#cbd5e1" : "linear-gradient(135deg,#6366f1,#8b5cf6)", color: "#fff",
+                fontSize: 15, fontWeight: 700, cursor: creating ? "default" : "pointer", marginBottom: 12,
+                boxShadow: creating ? "none" : "0 4px 12px rgba(99,102,241,0.3)",
               }}>
-                作成する
+                {creating ? "作成中..." : "作成する"}
               </button>
               <br />
               <button onClick={() => setMode(null)} style={{ background: "none", border: "none", color: "#94a3b8", fontSize: 12, cursor: "pointer", fontFamily: FONT }}>
