@@ -381,7 +381,7 @@ function ClassPicker({ value, onChange }) {
 
 // ============ MAIN APP ============
 export default function App({ user, familyId, onLogout, onLeaveFamily }) {
-  const [tab, setTab] = useState("schedule");
+  const [tab, setTab] = useState("dashboard");
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [modal, setModal] = useState(null);
@@ -395,7 +395,7 @@ export default function App({ user, familyId, onLogout, onLeaveFamily }) {
   });
   const [touchStart, setTouchStart] = useState(null);
 
-  const tabs = ["schedule", "checklist", "history", "stats", "links"];
+  const tabs = ["dashboard", "schedule", "checklist", "history", "links"];
   const handleSwipe = (direction) => {
     const currentIndex = tabs.indexOf(tab);
     if (direction === "left" && currentIndex < tabs.length - 1) {
@@ -687,10 +687,10 @@ export default function App({ user, familyId, onLogout, onLeaveFamily }) {
         zIndex: 100,
         boxShadow: "0 -4px 20px rgba(30,27,75,0.1)",
       }}>
+        <BottomNavBtn active={tab === "dashboard"} onClick={() => setTab("dashboard")} icon="🏠" label="ホーム" />
         <BottomNavBtn active={tab === "schedule"} onClick={() => setTab("schedule")} icon="📅" label="予定" />
         <BottomNavBtn active={tab === "checklist"} onClick={() => setTab("checklist")} icon="✅" label="持ち物" />
         <BottomNavBtn active={tab === "history"} onClick={() => setTab("history")} icon="🏆" label="成績" />
-        <BottomNavBtn active={tab === "stats"} onClick={() => setTab("stats")} icon="📊" label="統計" />
         <BottomNavBtn active={tab === "links"} onClick={() => setTab("links")} icon="🔗" label="リンク" />
       </div>
 
@@ -706,6 +706,133 @@ export default function App({ user, familyId, onLogout, onLeaveFamily }) {
           setTouchStart(null);
         }}
       >
+
+        {/* ===== DASHBOARD TAB ===== */}
+        {tab === "dashboard" && (() => {
+          const nextComp = upcoming[0];
+          const urgentEntries = upcoming.filter(c => {
+            if (c.entryDone) return false;
+            if (!c.entryDeadline) return false;
+            const diff = Math.ceil((new Date(c.entryDeadline + "T23:59:59") - new Date()) / 86400000);
+            return diff >= 0 && diff <= 7;
+          });
+          const currentYear = new Date().getFullYear();
+          const thisYearHistory = data.history.filter(h => h.date && h.date.startsWith(String(currentYear)));
+          const medals = { gold: 0, silver: 0, bronze: 0 };
+          thisYearHistory.forEach(h => (h.childEntries || []).forEach(ce => {
+            Object.values(ce.results || {}).forEach(r => {
+              if (r && r.includes("🥇")) medals.gold++;
+              if (r && r.includes("🥈")) medals.silver++;
+              if (r && r.includes("🥉")) medals.bronze++;
+            });
+          }));
+
+          return (
+            <div>
+              {/* 次の大会 */}
+              {nextComp ? (
+                <div style={{ background: `linear-gradient(135deg, ${DARK_PURPLE}, #4c1d95)`, borderRadius: 16, padding: 18, marginBottom: 14, color: "#fff", position: "relative", overflow: "hidden" }}>
+                  <div style={{ position: "absolute", top: -20, right: -20, fontSize: 80, opacity: 0.1 }}>🎯</div>
+                  <div style={{ fontSize: 11, color: GOLD, fontWeight: 600, marginBottom: 6 }}>🎯 次の大会</div>
+                  <div style={{ fontSize: 18, fontWeight: 900, marginBottom: 4 }}>{nextComp.name}</div>
+                  <div style={{ fontSize: 12, opacity: 0.9, marginBottom: 8 }}>
+                    📅 {nextComp.date}
+                    {nextComp.venue && <span> ・ 📍 {nextComp.venue}</span>}
+                  </div>
+                  <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                    <Countdown date={nextComp.date} />
+                    {nextComp.bibNumber && (
+                      <span style={{ background: "rgba(255,255,255,0.2)", padding: "3px 10px", borderRadius: 10, fontSize: 11 }}>🎽 No.{nextComp.bibNumber}</span>
+                    )}
+                  </div>
+                  {(() => {
+                    const p = getProg(nextComp.id);
+                    const pct = p.total > 0 ? Math.round(p.done / p.total * 100) : 0;
+                    return (
+                      <div style={{ marginTop: 12 }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
+                          <span style={{ fontSize: 11 }}>✅ 持ち物準備</span>
+                          <span style={{ fontSize: 11 }}>{p.done}/{p.total}</span>
+                        </div>
+                        <div style={{ height: 6, background: "rgba(255,255,255,0.2)", borderRadius: 6 }}>
+                          <div style={{ height: "100%", width: pct + "%", background: GOLD, borderRadius: 6, transition: "width 0.3s" }} />
+                        </div>
+                      </div>
+                    );
+                  })()}
+                </div>
+              ) : (
+                <div style={{ background: "#f8fafc", borderRadius: 16, padding: 24, marginBottom: 14, textAlign: "center", color: "#94a3b8" }}>
+                  <div style={{ fontSize: 40, marginBottom: 8 }}>📅</div>
+                  <p style={{ fontSize: 13 }}>予定されている大会はありません</p>
+                  <button onClick={() => { setTab("schedule"); openCompModal(null); }} style={{ marginTop: 12, padding: "8px 16px", background: DARK_PURPLE, color: GOLD, border: "none", borderRadius: 10, fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: FONT }}>＋ 大会を追加</button>
+                </div>
+              )}
+
+              {/* 要対応 */}
+              {urgentEntries.length > 0 && (
+                <div style={{ background: "#fef2f2", borderRadius: 16, padding: 14, marginBottom: 14, border: "1px solid #fecaca" }}>
+                  <div style={{ fontSize: 12, color: "#dc2626", fontWeight: 700, marginBottom: 8 }}>⚠️ 要対応</div>
+                  {urgentEntries.map(c => {
+                    const diff = Math.ceil((new Date(c.entryDeadline + "T23:59:59") - new Date()) / 86400000);
+                    return (
+                      <div key={c.id} style={{ fontSize: 12, color: "#7f1d1d", marginBottom: 4, display: "flex", justifyContent: "space-between" }}>
+                        <span>{c.name}</span>
+                        <span style={{ fontWeight: 600 }}>締切 あと{diff}日</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* 今年の成績 */}
+              <div style={{ background: "linear-gradient(145deg, #fffbeb, #fef3c7)", borderRadius: 16, padding: 14, marginBottom: 14, border: "1px solid #fde68a" }}>
+                <div style={{ fontSize: 12, color: "#92400e", fontWeight: 700, marginBottom: 10 }}>📊 {currentYear}年の成績</div>
+                <div style={{ display: "flex", justifyContent: "space-around", textAlign: "center" }}>
+                  <div>
+                    <div style={{ fontSize: 28, fontWeight: 900, color: "#78350f" }}>{thisYearHistory.length}</div>
+                    <div style={{ fontSize: 10, color: "#92400e" }}>大会出場</div>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 28, fontWeight: 900, color: "#78350f" }}>🥇{medals.gold}</div>
+                    <div style={{ fontSize: 10, color: "#92400e" }}>優勝</div>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 28, fontWeight: 900, color: "#78350f" }}>🥈{medals.silver}</div>
+                    <div style={{ fontSize: 10, color: "#92400e" }}>準優勝</div>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 28, fontWeight: 900, color: "#78350f" }}>🥉{medals.bronze}</div>
+                    <div style={{ fontSize: 10, color: "#92400e" }}>3位</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* 直近の予定 */}
+              {upcoming.length > 0 && (
+                <div style={{ background: "#fff", borderRadius: 16, padding: 14, marginBottom: 14, boxShadow: "0 2px 10px rgba(0,0,0,0.05)" }}>
+                  <div style={{ fontSize: 12, color: DARK_PURPLE, fontWeight: 700, marginBottom: 10 }}>📅 直近の予定</div>
+                  {upcoming.slice(0, 4).map(c => (
+                    <div key={c.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: "1px solid #f1f5f9" }}>
+                      <div>
+                        <div style={{ fontSize: 13, fontWeight: 600, color: "#1e293b" }}>{c.name}</div>
+                        <div style={{ fontSize: 10, color: "#64748b" }}>{c.date}</div>
+                      </div>
+                      <div style={{ fontSize: 10, color: c.entryDone ? "#16a34a" : "#94a3b8" }}>
+                        {c.entryDone ? "✅応募済" : "未応募"}
+                      </div>
+                    </div>
+                  ))}
+                  {upcoming.length > 4 && (
+                    <button onClick={() => setTab("schedule")} style={{ width: "100%", marginTop: 8, padding: 8, background: "transparent", border: "1px dashed #e2e8f0", borderRadius: 8, color: "#64748b", fontSize: 11, cursor: "pointer", fontFamily: FONT }}>
+                      他 {upcoming.length - 4} 件を見る →
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+          );
+        })()}
 
         {/* ===== SCHEDULE TAB ===== */}
         {tab === "schedule" && (
