@@ -518,8 +518,16 @@ export default function App({ user, familyId, onLogout, onLeaveFamily }) {
           <div style={{ position: "absolute", top: 8, left: 12, display: "flex", gap: 4, alignItems: "center" }}>
             <button
               onClick={() => {
-                navigator.clipboard.writeText(familyId);
-                alert("ファミリーIDをコピーしました！\n\n" + familyId + "\n\nこのIDを家族に共有してください。");
+                const text = familyId;
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                  navigator.clipboard.writeText(text).then(() => {
+                    alert("ファミリーIDをコピーしました！\n\n" + text + "\n\nこのIDを家族に共有してください。");
+                  }).catch(() => {
+                    prompt("以下のIDをコピーして家族に共有してください：", text);
+                  });
+                } else {
+                  prompt("以下のIDをコピーして家族に共有してください：", text);
+                }
               }}
               style={{ background: "rgba(255,255,255,0.2)", border: "none", borderRadius: 8, padding: "3px 8px", color: "#fff", fontSize: 10, cursor: "pointer", fontFamily: FONT, display: "flex", alignItems: "center", gap: 3 }}
             >
@@ -709,7 +717,6 @@ export default function App({ user, familyId, onLogout, onLeaveFamily }) {
                     <button onClick={() => openCompModal(comp)} style={{ flex: 1, minWidth: 60, padding: 6, border: "2px solid #6366f1", borderRadius: 8, background: "transparent", color: "#6366f1", fontWeight: 600, fontSize: 11, cursor: "pointer", fontFamily: FONT }}>✏️編集</button>
                     <button onClick={() => { setSelCL(comp); setTab("checklist"); }} style={{ flex: 1, minWidth: 60, padding: 6, border: "2px solid #22c55e", borderRadius: 8, background: "transparent", color: "#22c55e", fontWeight: 600, fontSize: 11, cursor: "pointer", fontFamily: FONT }}>✅持ち物</button>
                     <button onClick={() => moveToHist(comp)} style={{ flex: 1, minWidth: 60, padding: 6, border: "2px solid #f59e0b", borderRadius: 8, background: "transparent", color: "#f59e0b", fontWeight: 600, fontSize: 11, cursor: "pointer", fontFamily: FONT }}>🏆成績</button>
-                    <button onClick={() => exportToCalendar(comp)} style={{ padding: "6px 9px", border: "2px solid #8b5cf6", borderRadius: 8, background: "transparent", color: "#8b5cf6", fontSize: 11, cursor: "pointer", fontFamily: FONT }}>📲</button>
                     <button onClick={() => delComp(comp.id)} style={{ padding: "6px 9px", border: "2px solid #fecaca", borderRadius: 8, background: "transparent", color: "#ef4444", fontSize: 11, cursor: "pointer", fontFamily: FONT }}>🗑</button>
                   </div>
                 </div>
