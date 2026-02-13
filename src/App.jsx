@@ -483,6 +483,7 @@ export default function App({ user, familyId, onLogout, onLeaveFamily }) {
         <TabBtn active={tab === "checklist"} onClick={() => setTab("checklist")} icon="✅">持ち物</TabBtn>
         <TabBtn active={tab === "history"} onClick={() => setTab("history")} icon="🏆">成績</TabBtn>
         <TabBtn active={tab === "stats"} onClick={() => setTab("stats")} icon="📊">統計</TabBtn>
+        <TabBtn active={tab === "links"} onClick={() => setTab("links")} icon="🔗">リンク</TabBtn>
       </div>
 
       <div style={{ maxWidth: 600, margin: "0 auto", padding: "12px 12px 100px" }}>
@@ -805,6 +806,43 @@ export default function App({ user, familyId, onLogout, onLeaveFamily }) {
                 </div>
               </>
             )}
+          </div>
+        )}
+
+        {/* ===== LINKS TAB ===== */}
+        {tab === "links" && (
+          <div>
+            <h3 style={{ fontSize: 13, fontWeight: 700, color: "#1e293b", marginBottom: 12, marginTop: 4 }}>🔗 便利なリンク</h3>
+
+            <a href="https://www.jdsf.or.jp/" target="_blank" rel="noopener noreferrer" style={{ textDecoration: "none" }}>
+              <div style={{ background: "#fff", borderRadius: 13, padding: 16, marginBottom: 10, boxShadow: "0 2px 8px rgba(0,0,0,0.05)", border: "1px solid #f1f5f9", display: "flex", alignItems: "center", gap: 12 }}>
+                <div style={{ width: 44, height: 44, borderRadius: 10, background: "linear-gradient(135deg,#6366f1,#8b5cf6)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, flexShrink: 0 }}>
+                  🏛️
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontWeight: 700, fontSize: 14, color: "#1e293b", marginBottom: 2 }}>JDSF公式サイト</div>
+                  <div style={{ fontSize: 11, color: "#64748b" }}>日本ダンススポーツ連盟の公式ページ</div>
+                </div>
+                <div style={{ color: "#94a3b8", fontSize: 16 }}>→</div>
+              </div>
+            </a>
+
+            <a href="https://adm.jdsf.jp/" target="_blank" rel="noopener noreferrer" style={{ textDecoration: "none" }}>
+              <div style={{ background: "#fff", borderRadius: 13, padding: 16, marginBottom: 10, boxShadow: "0 2px 8px rgba(0,0,0,0.05)", border: "1px solid #f1f5f9", display: "flex", alignItems: "center", gap: 12 }}>
+                <div style={{ width: 44, height: 44, borderRadius: 10, background: "linear-gradient(135deg,#f59e0b,#ef4444)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, flexShrink: 0 }}>
+                  📋
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontWeight: 700, fontSize: 14, color: "#1e293b", marginBottom: 2 }}>最新の競技会情報</div>
+                  <div style={{ fontSize: 11, color: "#64748b" }}>大会スケジュール・エントリー情報</div>
+                </div>
+                <div style={{ color: "#94a3b8", fontSize: 16 }}>→</div>
+              </div>
+            </a>
+
+            <p style={{ fontSize: 11, color: "#94a3b8", textAlign: "center", marginTop: 20 }}>
+              タップすると外部サイトが開きます
+            </p>
           </div>
         )}
       </div>
