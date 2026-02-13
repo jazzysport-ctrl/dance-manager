@@ -239,6 +239,11 @@ export default function App({ user, familyId, onLogout, onLeaveFamily }) {
   const [form, setForm] = useState({});
   const [selChild, setSelChild] = useState(null);
   const [selCL, setSelCL] = useState(null);
+  const [viewMode, setViewMode] = useState("list"); // "list" | "calendar"
+  const [calMonth, setCalMonth] = useState(() => {
+    const now = new Date();
+    return { year: now.getFullYear(), month: now.getMonth() };
+  });
 
   useEffect(() => {
     if (!familyId) return;
@@ -491,25 +496,117 @@ export default function App({ user, familyId, onLogout, onLeaveFamily }) {
         {/* ===== SCHEDULE TAB ===== */}
         {tab === "schedule" && (
           <div>
-            {upcoming.length === 0 && past.length === 0 && (
-              <div style={{ textAlign: "center", padding: "50px 20px", color: "#94a3b8" }}>
-                <div style={{ fontSize: 50, marginBottom: 12 }}>📅</div>
-                <p style={{ fontSize: 14, fontWeight: 600 }}>まだ大会がありません</p>
-                <p style={{ fontSize: 12 }}>下のボタンから追加しましょう！</p>
-              </div>
-            )}
+            {/* View mode toggle */}
+            <div style={{ display: "flex", gap: 6, marginBottom: 12 }}>
+              <button onClick={() => setViewMode("list")} style={{
+                flex: 1, padding: "8px 12px", borderRadius: 10, border: "none", fontFamily: FONT,
+                background: viewMode === "list" ? "#6366f1" : "#f1f5f9",
+                color: viewMode === "list" ? "#fff" : "#64748b",
+                fontWeight: 600, fontSize: 12, cursor: "pointer",
+              }}>📋 リスト</button>
+              <button onClick={() => setViewMode("calendar")} style={{
+                flex: 1, padding: "8px 12px", borderRadius: 10, border: "none", fontFamily: FONT,
+                background: viewMode === "calendar" ? "#6366f1" : "#f1f5f9",
+                color: viewMode === "calendar" ? "#fff" : "#64748b",
+                fontWeight: 600, fontSize: 12, cursor: "pointer",
+              }}>📅 カレンダー</button>
+            </div>
 
-            {upcoming.length > 0 && (
-              <h3 style={{ fontSize: 13, color: "#6366f1", fontWeight: 700, marginBottom: 8, marginTop: 4 }}>📌 今後の大会</h3>
-            )}
-            {upcoming.map((comp, i) => {
+            {/* Calendar View */}
+            {viewMode === "calendar" && (() => {
+              const year = calMonth.year;
+              const month = calMonth.month;
+              const firstDay = new Date(year, month, 1).getDay();
+              const daysInMonth = new Date(year, month + 1, 0).getDate();
+              const days = [];
+              for (let i = 0; i < firstDay; i++) days.push(null);
+              for (let i = 1; i <= daysInMonth; i++) days.push(i);
+
+              const allComps = [...data.competitions, ...data.history];
+              const getCompsForDay = (d) => {
+                if (!d) return [];
+                const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+                return allComps.filter(c => c.date === dateStr);
+              };
+
+              const monthNames = ["1月", "2月", "3月", "4月", "5月", "6月", "7月", "8月", "9月", "10月", "11月", "12月"];
+              const dayNames = ["日", "月", "火", "水", "木", "金", "土"];
+
+              return (
+                <div style={{ background: "#fff", borderRadius: 13, padding: 14, marginBottom: 12, boxShadow: "0 2px 8px rgba(0,0,0,0.05)" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                    <button onClick={() => setCalMonth(prev => {
+                      const newMonth = prev.month - 1;
+                      return newMonth < 0 ? { year: prev.year - 1, month: 11 } : { ...prev, month: newMonth };
+                    })} style={{ background: "#f1f5f9", border: "none", borderRadius: 8, padding: "6px 12px", cursor: "pointer", fontFamily: FONT, fontSize: 14 }}>←</button>
+                    <span style={{ fontWeight: 700, fontSize: 16, color: "#1e293b" }}>{year}年 {monthNames[month]}</span>
+                    <button onClick={() => setCalMonth(prev => {
+                      const newMonth = prev.month + 1;
+                      return newMonth > 11 ? { year: prev.year + 1, month: 0 } : { ...prev, month: newMonth };
+                    })} style={{ background: "#f1f5f9", border: "none", borderRadius: 8, padding: "6px 12px", cursor: "pointer", fontFamily: FONT, fontSize: 14 }}>→</button>
+                  </div>
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 2 }}>
+                    {dayNames.map((d, i) => (
+                      <div key={d} style={{ textAlign: "center", fontSize: 10, fontWeight: 600, padding: 4, color: i === 0 ? "#ef4444" : i === 6 ? "#3b82f6" : "#64748b" }}>{d}</div>
+                    ))}
+                    {days.map((d, i) => {
+                      const comps = getCompsForDay(d);
+                      const isToday = d && new Date().getFullYear() === year && new Date().getMonth() === month && new Date().getDate() === d;
+                      const dayOfWeek = (firstDay + (d || 1) - 1) % 7;
+                      return (
+                        <div key={i} style={{
+                          minHeight: 44, padding: 2, borderRadius: 6,
+                          background: isToday ? "#eff6ff" : d ? "#fafafa" : "transparent",
+                          border: isToday ? "2px solid #6366f1" : "1px solid #f1f5f9",
+                        }}>
+                          {d && (
+                            <>
+                              <div style={{ fontSize: 11, fontWeight: isToday ? 700 : 400, textAlign: "center", color: dayOfWeek === 0 ? "#ef4444" : dayOfWeek === 6 ? "#3b82f6" : "#475569" }}>{d}</div>
+                              {comps.slice(0, 2).map((c, ci) => (
+                                <div key={ci} style={{
+                                  fontSize: 8, padding: "1px 3px", marginTop: 1, borderRadius: 3,
+                                  background: c.id && c.id.startsWith && !data.history.find(h => h.id === c.id) ? "#ddd6fe" : "#fef3c7",
+                                  color: "#1e293b", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                                }}>{c.name}</div>
+                              ))}
+                              {comps.length > 2 && <div style={{ fontSize: 8, color: "#94a3b8", textAlign: "center" }}>+{comps.length - 2}</div>}
+                            </>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* List View */}
+            {viewMode === "list" && (
+              <>
+                {upcoming.length === 0 && past.length === 0 && (
+                  <div style={{ textAlign: "center", padding: "50px 20px", color: "#94a3b8" }}>
+                    <div style={{ fontSize: 50, marginBottom: 12 }}>📅</div>
+                    <p style={{ fontSize: 14, fontWeight: 600 }}>まだ大会がありません</p>
+                    <p style={{ fontSize: 12 }}>下のボタンから追加しましょう！</p>
+                  </div>
+                )}
+
+                {upcoming.length > 0 && (
+                  <h3 style={{ fontSize: 13, color: "#6366f1", fontWeight: 700, marginBottom: 8, marginTop: 4 }}>📌 今後の大会</h3>
+                )}
+                {upcoming.map((comp, i) => {
               const p = getProg(comp.id);
               return (
                 <div key={comp.id} style={{ background: "#fff", borderRadius: 13, padding: 14, marginBottom: 9, boxShadow: "0 2px 8px rgba(0,0,0,0.05)", border: "1px solid #f1f5f9", animation: "slideUp 0.3s ease " + (i * 0.04) + "s both" }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
                     <div style={{ flex: 1 }}>
                       <div style={{ fontWeight: 700, fontSize: 15, color: "#1e293b", marginBottom: 2 }}>{comp.name}</div>
-                      <div style={{ fontSize: 11, color: "#64748b" }}>{"📅 " + comp.date + (comp.venue ? " ・ 📍 " + comp.venue : "")}</div>
+                      <div style={{ fontSize: 11, color: "#64748b" }}>
+                        {"📅 " + comp.date}
+                        {comp.venue && (
+                          <span> ・ <a href={"https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(comp.venue)} target="_blank" rel="noopener noreferrer" style={{ color: "#3b82f6", textDecoration: "none" }}>📍 {comp.venue}</a></span>
+                        )}
+                      </div>
                       {comp.compClass && (
                         <span style={{ fontSize: 10, background: "#fef3c7", color: "#92400e", padding: "1px 7px", borderRadius: 10, fontWeight: 600, marginTop: 3, display: "inline-block" }}>
                           {"🏅 " + comp.compClass}
@@ -541,16 +638,18 @@ export default function App({ user, familyId, onLogout, onLeaveFamily }) {
               <h3 style={{ fontSize: 13, color: "#94a3b8", fontWeight: 700, marginBottom: 8, marginTop: 18 }}>⏰ 過去（未記録）</h3>
             )}
             {past.map(comp => (
-              <div key={comp.id} style={{ background: "#f8fafc", borderRadius: 12, padding: 12, marginBottom: 7, border: "1px solid #e2e8f0", opacity: 0.8 }}>
-                <div style={{ fontWeight: 600, fontSize: 13, color: "#64748b" }}>{comp.name}</div>
-                <div style={{ fontSize: 11, color: "#94a3b8" }}>{"📅 " + comp.date}</div>
-                <div style={{ display: "flex", gap: 5, marginTop: 7 }}>
-                  <button onClick={() => openCompModal(comp)} style={{ padding: "5px 10px", border: "1px solid #6366f1", borderRadius: 7, background: "transparent", color: "#6366f1", fontWeight: 600, fontSize: 11, cursor: "pointer", fontFamily: FONT }}>✏️編集</button>
-                  <button onClick={() => moveToHist(comp)} style={{ flex: 1, padding: 5, border: "1px solid #f59e0b", borderRadius: 7, background: "transparent", color: "#f59e0b", fontWeight: 600, fontSize: 11, cursor: "pointer", fontFamily: FONT }}>🏆成績を記録</button>
-                  <button onClick={() => delComp(comp.id)} style={{ padding: "5px 9px", border: "1px solid #fecaca", borderRadius: 7, background: "transparent", color: "#ef4444", fontSize: 11, cursor: "pointer", fontFamily: FONT }}>🗑</button>
-                </div>
-              </div>
-            ))}
+                  <div key={comp.id} style={{ background: "#f8fafc", borderRadius: 12, padding: 12, marginBottom: 7, border: "1px solid #e2e8f0", opacity: 0.8 }}>
+                    <div style={{ fontWeight: 600, fontSize: 13, color: "#64748b" }}>{comp.name}</div>
+                    <div style={{ fontSize: 11, color: "#94a3b8" }}>{"📅 " + comp.date}</div>
+                    <div style={{ display: "flex", gap: 5, marginTop: 7 }}>
+                      <button onClick={() => openCompModal(comp)} style={{ padding: "5px 10px", border: "1px solid #6366f1", borderRadius: 7, background: "transparent", color: "#6366f1", fontWeight: 600, fontSize: 11, cursor: "pointer", fontFamily: FONT }}>✏️編集</button>
+                      <button onClick={() => moveToHist(comp)} style={{ flex: 1, padding: 5, border: "1px solid #f59e0b", borderRadius: 7, background: "transparent", color: "#f59e0b", fontWeight: 600, fontSize: 11, cursor: "pointer", fontFamily: FONT }}>🏆成績を記録</button>
+                      <button onClick={() => delComp(comp.id)} style={{ padding: "5px 9px", border: "1px solid #fecaca", borderRadius: 7, background: "transparent", color: "#ef4444", fontSize: 11, cursor: "pointer", fontFamily: FONT }}>🗑</button>
+                    </div>
+                  </div>
+                ))}
+              </>
+            )}
 
             <div style={{ textAlign: "center", marginTop: 16 }}>
               <PrimaryBtn onClick={() => openCompModal(null)}>＋ 大会を追加</PrimaryBtn>
@@ -697,7 +796,10 @@ export default function App({ user, familyId, onLogout, onLeaveFamily }) {
                         <div>
                           <div style={{ fontWeight: 700, fontSize: 14, color: "#1e293b" }}>{entry.name}</div>
                           <div style={{ fontSize: 11, color: "#64748b" }}>
-                            {"📅 " + entry.date + (entry.venue ? " ・ 📍 " + entry.venue : "")}
+                            {"📅 " + entry.date}
+                            {entry.venue && (
+                              <span> ・ <a href={"https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(entry.venue)} target="_blank" rel="noopener noreferrer" style={{ color: "#3b82f6", textDecoration: "none" }}>📍 {entry.venue}</a></span>
+                            )}
                           </div>
                           {entry.compClass && (
                             <span style={{ fontSize: 10, background: "#fef3c7", color: "#92400e", padding: "1px 6px", borderRadius: 9, fontWeight: 600, display: "inline-block", marginTop: 2 }}>
