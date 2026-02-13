@@ -380,6 +380,7 @@ export default function App({ user, familyId, onLogout, onLeaveFamily }) {
   const openCompModal = (comp) => {
     setForm(comp || {
       name: "", date: "", venue: "", notes: "", compClass: "",
+      entryStartDate: "", entryDeadline: "", entryDone: false, bibNumber: "",
       childEntries: data.children.map(c => ({ child: c, sections: [] })),
     });
     setModal({ type: "comp", editing: !!comp });
@@ -658,8 +659,13 @@ export default function App({ user, familyId, onLogout, onLeaveFamily }) {
                         )}
                       </div>
                       {comp.compClass && (
-                        <span style={{ fontSize: 10, background: "#fef3c7", color: "#92400e", padding: "1px 7px", borderRadius: 10, fontWeight: 600, marginTop: 3, display: "inline-block" }}>
+                        <span style={{ fontSize: 10, background: "#fef3c7", color: "#92400e", padding: "1px 7px", borderRadius: 10, fontWeight: 600, marginTop: 3, display: "inline-block", marginRight: 4 }}>
                           {"🏅 " + comp.compClass}
+                        </span>
+                      )}
+                      {comp.bibNumber && (
+                        <span style={{ fontSize: 10, background: "#ddd6fe", color: "#5b21b6", padding: "1px 7px", borderRadius: 10, fontWeight: 600, marginTop: 3, display: "inline-block" }}>
+                          {"🎽 No." + comp.bibNumber}
                         </span>
                       )}
                       {(comp.childEntries || []).map(ce => ce.sections && ce.sections.length > 0 && (
@@ -672,6 +678,17 @@ export default function App({ user, familyId, onLogout, onLeaveFamily }) {
                     <div style={{ textAlign: "right", marginLeft: 8, flexShrink: 0 }}>
                       <Countdown date={comp.date} />
                       <div style={{ fontSize: 10, color: "#94a3b8", marginTop: 2 }}>{"持ち物" + p.done + "/" + p.total}</div>
+                      {comp.entryDone ? (
+                        <div style={{ fontSize: 10, color: "#16a34a", fontWeight: 600, marginTop: 2 }}>✅ 応募済み</div>
+                      ) : comp.entryDeadline ? (
+                        (() => {
+                          const deadlineDiff = Math.ceil((new Date(comp.entryDeadline + "T23:59:59") - new Date()) / 86400000);
+                          if (deadlineDiff < 0) return <div style={{ fontSize: 10, color: "#94a3b8", marginTop: 2 }}>締切終了</div>;
+                          if (deadlineDiff <= 3) return <div style={{ fontSize: 10, color: "#ef4444", fontWeight: 600, marginTop: 2 }}>{"⚠️ 締切" + deadlineDiff + "日前"}</div>;
+                          if (deadlineDiff <= 7) return <div style={{ fontSize: 10, color: "#f59e0b", fontWeight: 600, marginTop: 2 }}>{"📝 締切" + deadlineDiff + "日前"}</div>;
+                          return <div style={{ fontSize: 10, color: "#64748b", marginTop: 2 }}>{"締切: " + comp.entryDeadline}</div>;
+                        })()
+                      ) : null}
                     </div>
                   </div>
                   <div style={{ display: "flex", gap: 5, marginTop: 9, flexWrap: "wrap" }}>
@@ -1029,6 +1046,32 @@ export default function App({ user, familyId, onLogout, onLeaveFamily }) {
           </div>
         )}
 
+        <div style={{ background: "#f0f9ff", borderRadius: 10, padding: 12, marginBottom: 13 }}>
+          <label style={{ display: "block", marginBottom: 8, fontSize: 12, fontWeight: 700, color: "#0369a1" }}>📝 エントリー情報</label>
+          <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
+            <div style={{ flex: 1 }}>
+              <label style={{ display: "block", marginBottom: 2, fontSize: 10, color: "#475569" }}>応募開始日</label>
+              <input type="date" value={form.entryStartDate || ""} onChange={e => setForm({ ...form, entryStartDate: e.target.value })}
+                style={{ width: "100%", padding: "6px 8px", border: "2px solid #e2e8f0", borderRadius: 8, fontSize: 12, fontFamily: FONT }} />
+            </div>
+            <div style={{ flex: 1 }}>
+              <label style={{ display: "block", marginBottom: 2, fontSize: 10, color: "#475569" }}>応募締切日</label>
+              <input type="date" value={form.entryDeadline || ""} onChange={e => setForm({ ...form, entryDeadline: e.target.value })}
+                style={{ width: "100%", padding: "6px 8px", border: "2px solid #e2e8f0", borderRadius: 8, fontSize: 12, fontFamily: FONT }} />
+            </div>
+          </div>
+          <div onClick={() => setForm({ ...form, entryDone: !form.entryDone })} style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", padding: "6px 0" }}>
+            <div style={{
+              width: 20, height: 20, borderRadius: 5,
+              border: form.entryDone ? "none" : "2px solid #cbd5e1",
+              background: form.entryDone ? "linear-gradient(135deg,#22c55e,#16a34a)" : "transparent",
+              display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 12, fontWeight: 700,
+            }}>{form.entryDone && "✓"}</div>
+            <span style={{ fontSize: 12, color: "#1e293b", fontWeight: form.entryDone ? 600 : 400 }}>応募済み</span>
+          </div>
+        </div>
+
+        <Input label="ゼッケン番号" value={form.bibNumber || ""} onChange={v => setForm({ ...form, bibNumber: v })} placeholder="例: 123" />
         <Input label="メモ" value={form.notes || ""} onChange={v => setForm({ ...form, notes: v })} placeholder="集合時間、注意事項など" />
         <div style={{ textAlign: "right", marginTop: 14 }}>
           <PrimaryBtn onClick={async () => { await saveComp(form, modal && modal.editing); setModal(null); }} disabled={!form.name || !form.date}>
