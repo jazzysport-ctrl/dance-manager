@@ -52,6 +52,47 @@ const COLORS = ["#6366f1", "#ec4899", "#f59e0b", "#10b981", "#ef4444"];
 const EMOJIS = ["👧", "👦", "💃", "🕺", "⭐"];
 const FONT = "'Zen Maru Gothic', sans-serif";
 
+// iCalendar export helper
+function exportToCalendar(comp) {
+  const formatDate = (dateStr) => dateStr.replace(/-/g, '');
+  const startDate = formatDate(comp.date);
+  const endDate = startDate; // Same day event
+
+  const description = [
+    comp.venue ? `会場: ${comp.venue}` : '',
+    comp.compClass ? `クラス: ${comp.compClass}` : '',
+    comp.notes ? `メモ: ${comp.notes}` : '',
+    (comp.childEntries || []).map(ce =>
+      ce.sections?.length ? `${ce.child}: ${ce.sections.map(s => s.section).join('・')}` : ''
+    ).filter(Boolean).join('\\n'),
+  ].filter(Boolean).join('\\n');
+
+  const icsContent = [
+    'BEGIN:VCALENDAR',
+    'VERSION:2.0',
+    'PRODID:-//Dance Manager//JP',
+    'BEGIN:VEVENT',
+    `DTSTART;VALUE=DATE:${startDate}`,
+    `DTEND;VALUE=DATE:${endDate}`,
+    `SUMMARY:${comp.name}`,
+    comp.venue ? `LOCATION:${comp.venue}` : '',
+    `DESCRIPTION:${description}`,
+    `UID:${comp.id}@dance-manager`,
+    'END:VEVENT',
+    'END:VCALENDAR'
+  ].filter(Boolean).join('\r\n');
+
+  const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `${comp.name}.ics`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+}
+
 
 
 // Small components
@@ -628,6 +669,7 @@ export default function App({ user, familyId, onLogout, onLeaveFamily }) {
                     <button onClick={() => openCompModal(comp)} style={{ flex: 1, minWidth: 60, padding: 6, border: "2px solid #6366f1", borderRadius: 8, background: "transparent", color: "#6366f1", fontWeight: 600, fontSize: 11, cursor: "pointer", fontFamily: FONT }}>✏️編集</button>
                     <button onClick={() => { setSelCL(comp); setTab("checklist"); }} style={{ flex: 1, minWidth: 60, padding: 6, border: "2px solid #22c55e", borderRadius: 8, background: "transparent", color: "#22c55e", fontWeight: 600, fontSize: 11, cursor: "pointer", fontFamily: FONT }}>✅持ち物</button>
                     <button onClick={() => moveToHist(comp)} style={{ flex: 1, minWidth: 60, padding: 6, border: "2px solid #f59e0b", borderRadius: 8, background: "transparent", color: "#f59e0b", fontWeight: 600, fontSize: 11, cursor: "pointer", fontFamily: FONT }}>🏆成績</button>
+                    <button onClick={() => exportToCalendar(comp)} style={{ padding: "6px 9px", border: "2px solid #8b5cf6", borderRadius: 8, background: "transparent", color: "#8b5cf6", fontSize: 11, cursor: "pointer", fontFamily: FONT }}>📲</button>
                     <button onClick={() => delComp(comp.id)} style={{ padding: "6px 9px", border: "2px solid #fecaca", borderRadius: 8, background: "transparent", color: "#ef4444", fontSize: 11, cursor: "pointer", fontFamily: FONT }}>🗑</button>
                   </div>
                 </div>
