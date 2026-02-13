@@ -122,18 +122,22 @@ function Countdown({ date }) {
   return <span style={{ color: "#64748b", fontSize: 13 }}>{"あと" + diff + "日"}</span>;
 }
 
-function TabBtn({ active, onClick, children, icon }) {
+function BottomNavBtn({ active, onClick, icon, label }) {
   return (
     <button onClick={onClick} style={{
-      padding: "12px 14px", border: "none", whiteSpace: "nowrap",
-      borderBottom: active ? `3px solid ${GOLD}` : "3px solid transparent",
-      background: active ? "rgba(212,175,55,0.1)" : "transparent",
-      color: active ? DARK_PURPLE : "#64748b",
-      fontWeight: active ? 700 : 500, fontSize: 13, cursor: "pointer",
-      fontFamily: FONT, display: "flex", alignItems: "center", gap: 4,
-      transition: "all 0.2s ease",
+      display: "flex", flexDirection: "column", alignItems: "center", gap: 2,
+      padding: "6px 12px", border: "none", background: "transparent",
+      color: active ? DARK_PURPLE : "#94a3b8",
+      fontWeight: active ? 700 : 500, fontSize: 10, cursor: "pointer",
+      fontFamily: FONT, transition: "all 0.2s ease",
+      transform: active ? "scale(1.05)" : "scale(1)",
     }}>
-      <span style={{ fontSize: 15 }}>{icon}</span>{children}
+      <span style={{
+        fontSize: 22,
+        filter: active ? "none" : "grayscale(50%)",
+        transition: "all 0.2s ease",
+      }}>{icon}</span>
+      <span style={{ color: active ? GOLD : "#94a3b8" }}>{label}</span>
     </button>
   );
 }
@@ -303,6 +307,17 @@ export default function App({ user, familyId, onLogout, onLeaveFamily }) {
     const now = new Date();
     return { year: now.getFullYear(), month: now.getMonth() };
   });
+  const [touchStart, setTouchStart] = useState(null);
+
+  const tabs = ["schedule", "checklist", "history", "stats", "links"];
+  const handleSwipe = (direction) => {
+    const currentIndex = tabs.indexOf(tab);
+    if (direction === "left" && currentIndex < tabs.length - 1) {
+      setTab(tabs[currentIndex + 1]);
+    } else if (direction === "right" && currentIndex > 0) {
+      setTab(tabs[currentIndex - 1]);
+    }
+  };
 
   useEffect(() => {
     if (!familyId) return;
@@ -554,16 +569,57 @@ export default function App({ user, familyId, onLogout, onLeaveFamily }) {
         )}
       </div>
 
-      {/* TABS */}
-      <div style={{ display: "flex", background: "#fff", borderBottom: "1px solid #e2e8f0", position: "sticky", top: 0, zIndex: 100, overflowX: "auto" }}>
-        <TabBtn active={tab === "schedule"} onClick={() => setTab("schedule")} icon="📅">スケジュール</TabBtn>
-        <TabBtn active={tab === "checklist"} onClick={() => setTab("checklist")} icon="✅">持ち物</TabBtn>
-        <TabBtn active={tab === "history"} onClick={() => setTab("history")} icon="🏆">成績</TabBtn>
-        <TabBtn active={tab === "stats"} onClick={() => setTab("stats")} icon="📊">統計</TabBtn>
-        <TabBtn active={tab === "links"} onClick={() => setTab("links")} icon="🔗">リンク</TabBtn>
+      {/* FLOATING ACTION BUTTON */}
+      {tab === "schedule" && (
+        <button
+          onClick={() => openCompModal(null)}
+          style={{
+            position: "fixed", bottom: 90, right: 20,
+            width: 56, height: 56, borderRadius: "50%",
+            background: `linear-gradient(135deg, ${DARK_PURPLE}, #4c1d95)`,
+            border: `2px solid ${GOLD}`,
+            color: GOLD, fontSize: 24,
+            boxShadow: "0 4px 20px rgba(30,27,75,0.4)",
+            cursor: "pointer", zIndex: 99,
+            display: "flex", alignItems: "center", justifyContent: "center",
+            transition: "transform 0.2s ease",
+          }}
+          onMouseOver={e => e.currentTarget.style.transform = "scale(1.1)"}
+          onMouseOut={e => e.currentTarget.style.transform = "scale(1)"}
+        >
+          ＋
+        </button>
+      )}
+
+      {/* BOTTOM NAV */}
+      <div style={{
+        position: "fixed", bottom: 0, left: 0, right: 0,
+        background: "linear-gradient(180deg, rgba(255,255,255,0.95) 0%, #fff 100%)",
+        borderTop: `2px solid ${GOLD}`,
+        display: "flex", justifyContent: "space-around",
+        padding: "8px 0 env(safe-area-inset-bottom, 8px)",
+        zIndex: 100,
+        boxShadow: "0 -4px 20px rgba(30,27,75,0.1)",
+      }}>
+        <BottomNavBtn active={tab === "schedule"} onClick={() => setTab("schedule")} icon="📅" label="予定" />
+        <BottomNavBtn active={tab === "checklist"} onClick={() => setTab("checklist")} icon="✅" label="持ち物" />
+        <BottomNavBtn active={tab === "history"} onClick={() => setTab("history")} icon="🏆" label="成績" />
+        <BottomNavBtn active={tab === "stats"} onClick={() => setTab("stats")} icon="📊" label="統計" />
+        <BottomNavBtn active={tab === "links"} onClick={() => setTab("links")} icon="🔗" label="リンク" />
       </div>
 
-      <div style={{ maxWidth: 600, margin: "0 auto", padding: "12px 12px 100px" }}>
+      <div
+        style={{ maxWidth: 600, margin: "0 auto", padding: "12px 12px 120px" }}
+        onTouchStart={e => setTouchStart(e.touches[0].clientX)}
+        onTouchEnd={e => {
+          if (touchStart === null) return;
+          const diff = e.changedTouches[0].clientX - touchStart;
+          if (Math.abs(diff) > 80) {
+            handleSwipe(diff > 0 ? "right" : "left");
+          }
+          setTouchStart(null);
+        }}
+      >
 
         {/* ===== SCHEDULE TAB ===== */}
         {tab === "schedule" && (
