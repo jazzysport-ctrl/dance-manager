@@ -57,9 +57,12 @@ const SCORES = {
   "決勝進出": 3, "準決勝進出": 2, "2次予選進出": 1, "予選敗退": 0,
 };
 
-const COLORS = ["#6366f1", "#ec4899", "#f59e0b", "#10b981", "#ef4444"];
+const COLORS = ["#8b5cf6", "#ec4899", "#d4af37", "#10b981", "#ef4444"];
 const EMOJIS = ["👧", "👦", "💃", "🕺", "⭐"];
 const FONT = "'Zen Maru Gothic', sans-serif";
+const GOLD = "#d4af37";
+const DARK_PURPLE = "#1e1b4b";
+const ELEGANT_GRADIENT = "linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #4c1d95 100%)";
 
 // iCalendar export helper
 function exportToCalendar(comp) {
@@ -122,12 +125,13 @@ function Countdown({ date }) {
 function TabBtn({ active, onClick, children, icon }) {
   return (
     <button onClick={onClick} style={{
-      padding: "10px 12px", border: "none", whiteSpace: "nowrap",
-      borderBottom: active ? "3px solid #6366f1" : "3px solid transparent",
-      background: active ? "rgba(99,102,241,0.08)" : "transparent",
-      color: active ? "#6366f1" : "#64748b",
+      padding: "12px 14px", border: "none", whiteSpace: "nowrap",
+      borderBottom: active ? `3px solid ${GOLD}` : "3px solid transparent",
+      background: active ? "rgba(212,175,55,0.1)" : "transparent",
+      color: active ? DARK_PURPLE : "#64748b",
       fontWeight: active ? 700 : 500, fontSize: 13, cursor: "pointer",
       fontFamily: FONT, display: "flex", alignItems: "center", gap: 4,
+      transition: "all 0.2s ease",
     }}>
       <span style={{ fontSize: 15 }}>{icon}</span>{children}
     </button>
@@ -139,19 +143,22 @@ function Modal({ open, onClose, title, children }) {
   return (
     <div onClick={onClose} style={{
       position: "fixed", inset: 0, zIndex: 1000,
-      background: "rgba(0,0,0,0.4)", backdropFilter: "blur(4px)",
+      background: "rgba(30,27,75,0.6)", backdropFilter: "blur(8px)",
       display: "flex", alignItems: "center", justifyContent: "center", padding: 16,
     }}>
       <div onClick={e => e.stopPropagation()} style={{
-        background: "#fff", borderRadius: 20, padding: "22px 18px",
+        background: "linear-gradient(180deg, #ffffff 0%, #faf9ff 100%)", borderRadius: 24, padding: "24px 20px",
         maxWidth: 500, width: "100%", maxHeight: "85vh", overflowY: "auto",
-        boxShadow: "0 25px 50px rgba(0,0,0,0.15)",
+        boxShadow: "0 25px 60px rgba(30,27,75,0.25)",
+        border: `2px solid ${GOLD}`,
       }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-          <h3 style={{ margin: 0, fontSize: 18, color: "#1e293b", fontFamily: FONT }}>{title}</h3>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 18 }}>
+          <h3 style={{ margin: 0, fontSize: 18, color: DARK_PURPLE, fontFamily: FONT, display: "flex", alignItems: "center", gap: 8 }}>
+            <span style={{ color: GOLD }}>✦</span> {title}
+          </h3>
           <button onClick={onClose} style={{
-            background: "#f1f5f9", border: "none", borderRadius: "50%",
-            width: 32, height: 32, fontSize: 15, cursor: "pointer", color: "#64748b",
+            background: DARK_PURPLE, border: "none", borderRadius: "50%",
+            width: 32, height: 32, fontSize: 13, cursor: "pointer", color: GOLD,
           }}>✕</button>
         </div>
         {children}
@@ -182,12 +189,14 @@ function Input({ label, value, onChange, type, placeholder, required }) {
 function PrimaryBtn({ onClick, children, disabled }) {
   return (
     <button onClick={onClick} disabled={disabled} style={{
-      border: "none", borderRadius: 12, padding: "10px 22px",
-      fontSize: 14, fontWeight: 700,
+      border: "none", borderRadius: 12, padding: "12px 26px",
+      fontSize: 14, fontWeight: 700, letterSpacing: 0.5,
       cursor: disabled ? "default" : "pointer", fontFamily: FONT,
-      background: disabled ? "#cbd5e1" : "linear-gradient(135deg,#6366f1,#8b5cf6)",
-      color: "#fff",
-      boxShadow: disabled ? "none" : "0 4px 12px rgba(99,102,241,0.3)",
+      background: disabled ? "#cbd5e1" : `linear-gradient(135deg, ${DARK_PURPLE}, #4c1d95)`,
+      color: disabled ? "#94a3b8" : GOLD,
+      boxShadow: disabled ? "none" : "0 4px 15px rgba(30,27,75,0.4)",
+      border: disabled ? "none" : `1px solid ${GOLD}`,
+      transition: "all 0.2s ease",
     }}>
       {children}
     </button>
@@ -482,7 +491,7 @@ export default function App({ user, familyId, onLogout, onLeaveFamily }) {
   };
 
   return (
-    <div style={{ minHeight: "100vh", background: "linear-gradient(160deg,#faf5ff 0%,#eff6ff 40%,#f0fdf4 100%)", fontFamily: FONT }}>
+    <div style={{ minHeight: "100vh", background: "linear-gradient(160deg, #faf5ff 0%, #f5f3ff 40%, #ede9fe 100%)", fontFamily: FONT }}>
       <link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@400;500;700;900&display=swap" rel="stylesheet" />
       <style>{`
         @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.5} }
@@ -492,10 +501,13 @@ export default function App({ user, familyId, onLogout, onLeaveFamily }) {
       `}</style>
 
       {/* HEADER */}
-      <div style={{ background: "linear-gradient(135deg,#6366f1,#8b5cf6,#a78bfa)", padding: "22px 16px 14px", color: "#fff", textAlign: "center", position: "relative", overflow: "hidden" }}>
-        <div style={{ position: "absolute", top: -20, right: -20, fontSize: 100, opacity: 0.08, transform: "rotate(-15deg)" }}>💃🕺</div>
-        <h1 style={{ margin: 0, fontSize: 22, fontWeight: 900 }}>✨ ダンス大会マネージャー</h1>
-        <p style={{ margin: "3px 0 0", fontSize: 11, opacity: 0.85 }}>スケジュール・持ち物・成績をまとめて管理</p>
+      <div style={{ background: ELEGANT_GRADIENT, padding: "28px 16px 18px", color: "#fff", textAlign: "center", position: "relative", overflow: "hidden", borderBottom: `3px solid ${GOLD}` }}>
+        <div style={{ position: "absolute", top: -30, right: -30, fontSize: 120, opacity: 0.06, transform: "rotate(-15deg)" }}>💃🕺</div>
+        <div style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, background: "url('data:image/svg+xml,<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 100 100\"><circle cx=\"50\" cy=\"50\" r=\"1\" fill=\"%23d4af37\" opacity=\"0.3\"/></svg>')", backgroundSize: "30px 30px", opacity: 0.4 }}></div>
+        <h1 style={{ margin: 0, fontSize: 24, fontWeight: 900, letterSpacing: 1, textShadow: "0 2px 10px rgba(0,0,0,0.3)" }}>
+          <span style={{ color: GOLD }}>✦</span> Dance Manager <span style={{ color: GOLD }}>✦</span>
+        </h1>
+        <p style={{ margin: "5px 0 0", fontSize: 11, opacity: 0.8, letterSpacing: 2 }}>COMPETITION & SCHEDULE</p>
         {user && (
           <div style={{ position: "absolute", top: 8, right: 12, display: "flex", gap: 6, alignItems: "center" }}>
             <span style={{ fontSize: 10, opacity: 0.7 }}>{user.displayName}</span>
@@ -643,12 +655,14 @@ export default function App({ user, familyId, onLogout, onLeaveFamily }) {
                 )}
 
                 {upcoming.length > 0 && (
-                  <h3 style={{ fontSize: 13, color: "#6366f1", fontWeight: 700, marginBottom: 8, marginTop: 4 }}>📌 今後の大会</h3>
+                  <h3 style={{ fontSize: 14, color: DARK_PURPLE, fontWeight: 700, marginBottom: 12, marginTop: 4, display: "flex", alignItems: "center", gap: 6 }}>
+                    <span style={{ color: GOLD }}>◆</span> 今後の大会
+                  </h3>
                 )}
                 {upcoming.map((comp, i) => {
               const p = getProg(comp.id);
               return (
-                <div key={comp.id} style={{ background: "#fff", borderRadius: 13, padding: 14, marginBottom: 9, boxShadow: "0 2px 8px rgba(0,0,0,0.05)", border: "1px solid #f1f5f9", animation: "slideUp 0.3s ease " + (i * 0.04) + "s both" }}>
+                <div key={comp.id} style={{ background: "linear-gradient(145deg, #ffffff 0%, #faf9ff 100%)", borderRadius: 16, padding: 16, marginBottom: 12, boxShadow: "0 4px 20px rgba(30,27,75,0.08)", border: "1px solid #e9e5ff", animation: "slideUp 0.3s ease " + (i * 0.04) + "s both", position: "relative", overflow: "hidden" }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
                     <div style={{ flex: 1 }}>
                       <div style={{ fontWeight: 700, fontSize: 15, color: "#1e293b", marginBottom: 2 }}>{comp.name}</div>
