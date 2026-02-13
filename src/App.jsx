@@ -190,6 +190,75 @@ function Input({ label, value, onChange, type, placeholder, required }) {
   );
 }
 
+function SwipeableCard({ children, onDelete, style }) {
+  const [swipeX, setSwipeX] = useState(0);
+  const [startX, setStartX] = useState(null);
+  const [showDelete, setShowDelete] = useState(false);
+
+  const handleTouchStart = (e) => {
+    setStartX(e.touches[0].clientX);
+  };
+
+  const handleTouchMove = (e) => {
+    if (startX === null) return;
+    const diff = e.touches[0].clientX - startX;
+    if (diff < 0) {
+      setSwipeX(Math.max(diff, -100));
+    }
+  };
+
+  const handleTouchEnd = () => {
+    if (swipeX < -60) {
+      setShowDelete(true);
+      setSwipeX(-80);
+    } else {
+      setSwipeX(0);
+      setShowDelete(false);
+    }
+    setStartX(null);
+  };
+
+  const resetSwipe = () => {
+    setSwipeX(0);
+    setShowDelete(false);
+  };
+
+  return (
+    <div style={{ position: "relative", overflow: "hidden", borderRadius: 16, marginBottom: 12 }}>
+      {/* Delete background */}
+      <div style={{
+        position: "absolute", top: 0, right: 0, bottom: 0,
+        width: 80, background: "linear-gradient(90deg, #fecaca, #ef4444)",
+        display: "flex", alignItems: "center", justifyContent: "center",
+        borderRadius: "0 16px 16px 0",
+      }}>
+        <button
+          onClick={() => { if (confirm("削除しますか？")) { onDelete(); resetSwipe(); } else { resetSwipe(); } }}
+          style={{ background: "none", border: "none", color: "#fff", fontSize: 24, cursor: "pointer" }}
+        >
+          🗑
+        </button>
+      </div>
+      {/* Card content */}
+      <div
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+        onClick={() => { if (showDelete) resetSwipe(); }}
+        style={{
+          ...style,
+          transform: `translateX(${swipeX}px)`,
+          transition: startX === null ? "transform 0.3s ease" : "none",
+          position: "relative",
+          zIndex: 1,
+        }}
+      >
+        {children}
+      </div>
+    </div>
+  );
+}
+
 function PrimaryBtn({ onClick, children, disabled }) {
   return (
     <button onClick={onClick} disabled={disabled} style={{
@@ -727,7 +796,7 @@ export default function App({ user, familyId, onLogout, onLeaveFamily }) {
                 {upcoming.map((comp, i) => {
               const p = getProg(comp.id);
               return (
-                <div key={comp.id} style={{ background: "linear-gradient(145deg, #ffffff 0%, #faf9ff 100%)", borderRadius: 16, padding: 16, marginBottom: 12, boxShadow: "0 4px 20px rgba(30,27,75,0.08)", border: "1px solid #e9e5ff", animation: "slideUp 0.3s ease " + (i * 0.04) + "s both", position: "relative", overflow: "hidden" }}>
+                <SwipeableCard key={comp.id} onDelete={() => delComp(comp.id)} style={{ background: "linear-gradient(145deg, #ffffff 0%, #faf9ff 100%)", borderRadius: 16, padding: 16, boxShadow: "0 4px 20px rgba(30,27,75,0.08)", border: "1px solid #e9e5ff", animation: "slideUp 0.3s ease " + (i * 0.04) + "s both" }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
                     <div style={{ flex: 1 }}>
                       <div style={{ fontWeight: 700, fontSize: 15, color: "#1e293b", marginBottom: 2 }}>{comp.name}</div>
@@ -771,12 +840,11 @@ export default function App({ user, familyId, onLogout, onLeaveFamily }) {
                     </div>
                   </div>
                   <div style={{ display: "flex", gap: 5, marginTop: 9, flexWrap: "wrap" }}>
-                    <button onClick={() => openCompModal(comp)} style={{ flex: 1, minWidth: 60, padding: 6, border: "2px solid #6366f1", borderRadius: 8, background: "transparent", color: "#6366f1", fontWeight: 600, fontSize: 11, cursor: "pointer", fontFamily: FONT }}>✏️編集</button>
-                    <button onClick={() => { setSelCL(comp); setTab("checklist"); }} style={{ flex: 1, minWidth: 60, padding: 6, border: "2px solid #22c55e", borderRadius: 8, background: "transparent", color: "#22c55e", fontWeight: 600, fontSize: 11, cursor: "pointer", fontFamily: FONT }}>✅持ち物</button>
-                    <button onClick={() => moveToHist(comp)} style={{ flex: 1, minWidth: 60, padding: 6, border: "2px solid #f59e0b", borderRadius: 8, background: "transparent", color: "#f59e0b", fontWeight: 600, fontSize: 11, cursor: "pointer", fontFamily: FONT }}>🏆成績</button>
-                    <button onClick={() => delComp(comp.id)} style={{ padding: "6px 9px", border: "2px solid #fecaca", borderRadius: 8, background: "transparent", color: "#ef4444", fontSize: 11, cursor: "pointer", fontFamily: FONT }}>🗑</button>
+                    <button onClick={() => openCompModal(comp)} style={{ flex: 1, minWidth: 70, padding: 6, border: "2px solid #6366f1", borderRadius: 8, background: "transparent", color: "#6366f1", fontWeight: 600, fontSize: 11, cursor: "pointer", fontFamily: FONT }}>✏️編集</button>
+                    <button onClick={() => { setSelCL(comp); setTab("checklist"); }} style={{ flex: 1, minWidth: 70, padding: 6, border: "2px solid #22c55e", borderRadius: 8, background: "transparent", color: "#22c55e", fontWeight: 600, fontSize: 11, cursor: "pointer", fontFamily: FONT }}>✅持ち物</button>
+                    <button onClick={() => moveToHist(comp)} style={{ flex: 1, minWidth: 70, padding: 6, border: "2px solid #f59e0b", borderRadius: 8, background: "transparent", color: "#f59e0b", fontWeight: 600, fontSize: 11, cursor: "pointer", fontFamily: FONT }}>🏆成績</button>
                   </div>
-                </div>
+                </SwipeableCard>
               );
             })}
 
@@ -937,7 +1005,7 @@ export default function App({ user, familyId, onLogout, onLeaveFamily }) {
                     : (entry.childEntries || []);
                   if (selChild && filtered.length === 0) return null;
                   return (
-                    <div key={entry.id} style={{ background: "#fff", borderRadius: 13, padding: 14, marginBottom: 9, boxShadow: "0 2px 8px rgba(0,0,0,0.05)", border: "1px solid #f1f5f9", animation: "slideUp 0.3s ease " + (i * 0.04) + "s both" }}>
+                    <SwipeableCard key={entry.id} onDelete={() => delHist(entry.id)} style={{ background: "linear-gradient(145deg, #ffffff 0%, #faf9ff 100%)", borderRadius: 13, padding: 14, boxShadow: "0 4px 20px rgba(30,27,75,0.08)", border: "1px solid #e9e5ff", animation: "slideUp 0.3s ease " + (i * 0.04) + "s both" }}>
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
                         <div>
                           <div style={{ fontWeight: 700, fontSize: 14, color: "#1e293b" }}>{entry.name}</div>
@@ -953,10 +1021,7 @@ export default function App({ user, familyId, onLogout, onLeaveFamily }) {
                             </span>
                           )}
                         </div>
-                        <div style={{ display: "flex", gap: 3 }}>
-                          <button onClick={() => { setForm(entry); setModal({ type: "hist", editing: true }); }} style={{ background: "none", border: "none", color: "#94a3b8", fontSize: 13, cursor: "pointer", padding: 2 }}>✏️</button>
-                          <button onClick={() => delHist(entry.id)} style={{ background: "none", border: "none", color: "#cbd5e1", fontSize: 13, cursor: "pointer", padding: 2 }}>🗑</button>
-                        </div>
+                        <button onClick={() => { setForm(entry); setModal({ type: "hist", editing: true }); }} style={{ background: "rgba(212,175,55,0.1)", border: `1px solid ${GOLD}`, borderRadius: 8, color: DARK_PURPLE, fontSize: 11, cursor: "pointer", padding: "4px 10px", fontFamily: FONT, fontWeight: 600 }}>✏️編集</button>
                       </div>
                       {filtered.map(ce => {
                         const ci = data.children.indexOf(ce.child);
@@ -986,7 +1051,7 @@ export default function App({ user, familyId, onLogout, onLeaveFamily }) {
                           ))}
                         </div>
                       )}
-                    </div>
+                    </SwipeableCard>
                   );
                 })}
               </>
