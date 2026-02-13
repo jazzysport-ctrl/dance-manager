@@ -193,22 +193,36 @@ function Input({ label, value, onChange, type, placeholder, required }) {
 function SwipeableCard({ children, onDelete, style }) {
   const [swipeX, setSwipeX] = useState(0);
   const [startX, setStartX] = useState(null);
+  const [startY, setStartY] = useState(null);
+  const [isHorizontal, setIsHorizontal] = useState(null);
   const [showDelete, setShowDelete] = useState(false);
 
   const handleTouchStart = (e) => {
     setStartX(e.touches[0].clientX);
+    setStartY(e.touches[0].clientY);
+    setIsHorizontal(null);
   };
 
   const handleTouchMove = (e) => {
     if (startX === null) return;
-    const diff = e.touches[0].clientX - startX;
-    if (diff < 0) {
-      setSwipeX(Math.max(diff, -100));
+
+    const diffX = e.touches[0].clientX - startX;
+    const diffY = e.touches[0].clientY - startY;
+
+    // 最初の移動で方向を判定
+    if (isHorizontal === null && (Math.abs(diffX) > 10 || Math.abs(diffY) > 10)) {
+      setIsHorizontal(Math.abs(diffX) > Math.abs(diffY));
+    }
+
+    // 横スワイプの場合のみ処理
+    if (isHorizontal && diffX < 0) {
+      e.stopPropagation();
+      setSwipeX(Math.max(diffX, -100));
     }
   };
 
   const handleTouchEnd = () => {
-    if (swipeX < -60) {
+    if (swipeX < -50) {
       setShowDelete(true);
       setSwipeX(-80);
     } else {
@@ -216,6 +230,8 @@ function SwipeableCard({ children, onDelete, style }) {
       setShowDelete(false);
     }
     setStartX(null);
+    setStartY(null);
+    setIsHorizontal(null);
   };
 
   const resetSwipe = () => {
@@ -234,7 +250,7 @@ function SwipeableCard({ children, onDelete, style }) {
       }}>
         <button
           onClick={() => { if (confirm("削除しますか？")) { onDelete(); resetSwipe(); } else { resetSwipe(); } }}
-          style={{ background: "none", border: "none", color: "#fff", fontSize: 24, cursor: "pointer" }}
+          style={{ background: "none", border: "none", color: "#fff", fontSize: 24, cursor: "pointer", padding: 16 }}
         >
           🗑
         </button>
@@ -251,6 +267,7 @@ function SwipeableCard({ children, onDelete, style }) {
           transition: startX === null ? "transform 0.3s ease" : "none",
           position: "relative",
           zIndex: 1,
+          touchAction: "pan-y",
         }}
       >
         {children}
