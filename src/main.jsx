@@ -37,19 +37,16 @@ function AuthWrapper() {
   const [creating, setCreating] = useState(false);
 
   const handleCreateFamily = async () => {
-    alert("ボタンがクリックされました");
     if (creating) return;
     setCreating(true);
     try {
       const id = "fam-" + Date.now().toString(36);
-      alert("ファミリーID: " + id + ", Email: " + user.email);
       await createFamily(id, user.email);
-      alert("Firestore保存成功");
       localStorage.setItem("dance-family-" + user.uid, id);
       setFamilyId(id);
     } catch (e) {
       console.error("Family creation error:", e);
-      alert("エラー: " + e.message);
+      alert("ファミリー作成に失敗しました。Firestoreのセキュリティルールを確認してください。");
     } finally {
       setCreating(false);
     }
