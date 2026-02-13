@@ -1003,8 +1003,34 @@ export default function App({ user, familyId, onLogout, onLeaveFamily }) {
                   📋
                 </div>
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontWeight: 700, fontSize: 14, color: "#1e293b", marginBottom: 2 }}>最新の競技会情報</div>
+                  <div style={{ fontWeight: 700, fontSize: 14, color: "#1e293b", marginBottom: 2 }}>最新の競技会情報（JDSF）</div>
                   <div style={{ fontSize: 11, color: "#64748b" }}>大会スケジュール・エントリー情報</div>
+                </div>
+                <div style={{ color: "#94a3b8", fontSize: 16 }}>→</div>
+              </div>
+            </a>
+
+            <a href="https://jbdf-ejd.gr.jp/" target="_blank" rel="noopener noreferrer" style={{ textDecoration: "none" }}>
+              <div style={{ background: "#fff", borderRadius: 13, padding: 16, marginBottom: 10, boxShadow: "0 2px 8px rgba(0,0,0,0.05)", border: "1px solid #f1f5f9", display: "flex", alignItems: "center", gap: 12 }}>
+                <div style={{ width: 44, height: 44, borderRadius: 10, background: "linear-gradient(135deg,#3b82f6,#1d4ed8)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, flexShrink: 0 }}>
+                  🏛️
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontWeight: 700, fontSize: 14, color: "#1e293b", marginBottom: 2 }}>JBDF公式サイト</div>
+                  <div style={{ fontSize: 11, color: "#64748b" }}>日本ボールルームダンス連盟</div>
+                </div>
+                <div style={{ color: "#94a3b8", fontSize: 16 }}>→</div>
+              </div>
+            </a>
+
+            <a href="http://dtsdance.blog.fc2.com/" target="_blank" rel="noopener noreferrer" style={{ textDecoration: "none" }}>
+              <div style={{ background: "#fff", borderRadius: 13, padding: 16, marginBottom: 10, boxShadow: "0 2px 8px rgba(0,0,0,0.05)", border: "1px solid #f1f5f9", display: "flex", alignItems: "center", gap: 12 }}>
+                <div style={{ width: 44, height: 44, borderRadius: 10, background: "linear-gradient(135deg,#ec4899,#db2777)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, flexShrink: 0 }}>
+                  💃
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontWeight: 700, fontSize: 14, color: "#1e293b", marginBottom: 2 }}>D.T.S相模原</div>
+                  <div style={{ fontSize: 11, color: "#64748b" }}>ダンスサークル情報</div>
                 </div>
                 <div style={{ color: "#94a3b8", fontSize: 16 }}>→</div>
               </div>
