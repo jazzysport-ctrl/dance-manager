@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import ReactDOM from "react-dom/client";
 import { signInWithPopup, signOut, onAuthStateChanged } from "firebase/auth";
 import { auth, googleProvider } from "./firebase";
-import { createFamily } from "./store";
+import { createFamily, findFamilyByEmail } from "./store";
 import App from "./App";
 
 const FONT = "'Zen Maru Gothic', sans-serif";
@@ -15,13 +15,29 @@ function AuthWrapper() {
   const [mode, setMode] = useState(null); // "create" | "join"
 
   useEffect(() => {
-    return onAuthStateChanged(auth, (u) => {
+    return onAuthStateChanged(auth, async (u) => {
       setUser(u);
-      setLoading(false);
-      // Check if already has familyId stored
       if (u) {
+        // Check localStorage first
         const stored = localStorage.getItem("dance-family-" + u.uid);
-        if (stored) setFamilyId(stored);
+        if (stored) {
+          setFamilyId(stored);
+          setLoading(false);
+        } else {
+          // Search Firestore for existing family
+          try {
+            const found = await findFamilyByEmail(u.email);
+            if (found) {
+              localStorage.setItem("dance-family-" + u.uid, found);
+              setFamilyId(found);
+            }
+          } catch (e) {
+            console.error("Family search error:", e);
+          }
+          setLoading(false);
+        }
+      } else {
+        setLoading(false);
       }
     });
   }, []);

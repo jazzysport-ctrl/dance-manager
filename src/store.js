@@ -1,6 +1,6 @@
 import {
   doc, collection, setDoc, getDoc, onSnapshot, updateDoc, deleteDoc,
-  addDoc, query, orderBy, getDocs,
+  addDoc, query, orderBy, getDocs, where,
 } from "firebase/firestore";
 import { db } from "./firebase";
 
@@ -32,6 +32,16 @@ export function onHistory(familyId, callback) {
   return onSnapshot(q, (snap) => {
     callback(snap.docs.map(d => ({ id: d.id, ...d.data() })));
   });
+}
+
+// Find family by email
+export async function findFamilyByEmail(email) {
+  const q = query(collection(db, "families"), where("members", "array-contains", email));
+  const snap = await getDocs(q);
+  if (!snap.empty) {
+    return snap.docs[0].id;
+  }
+  return null;
 }
 
 // Create or join family
