@@ -711,6 +711,95 @@ function SettingsModal({ open, onClose }) {
   );
 }
 
+// ===== HELP MODAL =====
+function HelpModal({ open, onClose }) {
+  const { darkMode, theme, accent } = useTheme();
+
+  if (!open) return null;
+
+  const steps = [
+    {
+      icon: "👤",
+      title: "1. ログイン",
+      desc: "Googleアカウントでログインします。"
+    },
+    {
+      icon: "👨‍👩‍👧",
+      title: "2. ファミリー設定",
+      desc: "新しいファミリーを作成、または既存のファミリーIDを入力して参加します。"
+    },
+    {
+      icon: "👧",
+      title: "3. お子さんを登録",
+      desc: "ヘッダーの「＋管理」から、お子さんの名前を登録します。"
+    },
+    {
+      icon: "📅",
+      title: "4. 大会を追加",
+      desc: "「予定」タブで「＋大会を追加」をタップ。日程・会場・出場クラスなどを入力します。"
+    },
+    {
+      icon: "✅",
+      title: "5. 持ち物チェック",
+      desc: "各大会の「持ち物」ボタンから、準備状況をチェックできます。"
+    },
+    {
+      icon: "🏆",
+      title: "6. 成績を記録",
+      desc: "大会後に「成績」ボタンで結果を記録。写真も追加できます。"
+    },
+    {
+      icon: "👨‍👩‍👧‍👦",
+      title: "家族と共有するには",
+      desc: "左上の「📋 ID共有」をタップしてファミリーIDをコピー。家族にIDを教えれば、同じデータを共有できます。"
+    },
+  ];
+
+  return (
+    <Modal open={open} onClose={onClose} title="❓ 使い方ガイド">
+      <div style={{ marginBottom: 16 }}>
+        <p style={{ fontSize: 12, color: darkMode ? "#d1d5db" : "#64748b", marginBottom: 12, lineHeight: 1.6 }}>
+          ダンス大会の予定・持ち物・成績を家族で共有できるアプリです。
+        </p>
+
+        {steps.map((step, idx) => (
+          <div key={idx} style={{
+            display: "flex", gap: 10, padding: "10px 0",
+            borderBottom: idx < steps.length - 1 ? `1px solid ${darkMode ? "#374151" : "#f1f5f9"}` : "none",
+          }}>
+            <div style={{
+              width: 36, height: 36, borderRadius: 10,
+              background: `${theme.primary}20`,
+              display: "flex", alignItems: "center", justifyContent: "center",
+              fontSize: 18, flexShrink: 0,
+            }}>
+              {step.icon}
+            </div>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: darkMode ? "#f3f4f6" : "#1e293b", marginBottom: 2 }}>
+                {step.title}
+              </div>
+              <div style={{ fontSize: 11, color: darkMode ? "#9ca3af" : "#64748b", lineHeight: 1.5 }}>
+                {step.desc}
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div style={{
+        padding: 12, borderRadius: 12,
+        background: `${accent}20`,
+        border: `1px solid ${accent}40`,
+        fontSize: 11, color: darkMode ? "#fcd34d" : "#92400e",
+        textAlign: "center",
+      }}>
+        💡 困ったときはこのガイドをいつでも確認できます
+      </div>
+    </Modal>
+  );
+}
+
 // ============ MAIN APP ============
 function AppContent({ user, familyId, onLogout, onLeaveFamily }) {
   const { theme, darkMode, accent } = useTheme();
@@ -728,6 +817,7 @@ function AppContent({ user, familyId, onLogout, onLeaveFamily }) {
   });
   const [touchStart, setTouchStart] = useState(null);
   const [showSettings, setShowSettings] = useState(false);
+  const [showHelp, setShowHelp] = useState(false);
 
   const tabs = ["dashboard", "schedule", "history", "links"];
   const handleSwipe = (direction) => {
@@ -953,6 +1043,9 @@ function AppContent({ user, familyId, onLogout, onLeaveFamily }) {
       {/* SETTINGS MODAL */}
       <SettingsModal open={showSettings} onClose={() => setShowSettings(false)} />
 
+      {/* HELP MODAL */}
+      <HelpModal open={showHelp} onClose={() => setShowHelp(false)} />
+
       {/* HEADER */}
       <div style={{
         background: theme.gradient, padding: "28px 16px 18px", color: "#fff", textAlign: "center",
@@ -967,6 +1060,7 @@ function AppContent({ user, familyId, onLogout, onLeaveFamily }) {
         <p style={{ margin: "5px 0 0", fontSize: 11, opacity: 0.8, letterSpacing: 2 }}>COMPETITION & SCHEDULE</p>
         {user && (
           <div style={{ position: "absolute", top: 8, right: 12, display: "flex", gap: 6, alignItems: "center" }}>
+            <button onClick={() => setShowHelp(true)} style={{ background: "rgba(255,255,255,0.2)", border: "none", borderRadius: 8, padding: "3px 8px", color: "#fff", fontSize: 10, cursor: "pointer", fontFamily: FONT, transition: "transform 0.2s ease" }}>❓</button>
             <button onClick={() => setShowSettings(true)} style={{ background: "rgba(255,255,255,0.2)", border: "none", borderRadius: 8, padding: "3px 8px", color: "#fff", fontSize: 10, cursor: "pointer", fontFamily: FONT, transition: "transform 0.2s ease" }}>⚙️</button>
             <button onClick={onLeaveFamily} style={{ background: "rgba(255,255,255,0.2)", border: "none", borderRadius: 8, padding: "3px 8px", color: "#fff", fontSize: 10, cursor: "pointer", fontFamily: FONT, transition: "transform 0.2s ease" }}>切替</button>
             <button onClick={onLogout} style={{ background: "rgba(255,255,255,0.2)", border: "none", borderRadius: 8, padding: "3px 8px", color: "#fff", fontSize: 10, cursor: "pointer", fontFamily: FONT, transition: "transform 0.2s ease" }}>ログアウト</button>
