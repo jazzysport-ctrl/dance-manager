@@ -730,7 +730,7 @@ function AppContent({ user, familyId, onLogout, onLeaveFamily }) {
   const [touchStart, setTouchStart] = useState(null);
   const [showSettings, setShowSettings] = useState(false);
 
-  const tabs = ["dashboard", "schedule", "checklist", "history", "links"];
+  const tabs = ["dashboard", "schedule", "history", "links"];
   const handleSwipe = (direction) => {
     const currentIndex = tabs.indexOf(tab);
     if (direction === "left" && currentIndex < tabs.length - 1) {
@@ -1072,7 +1072,6 @@ function AppContent({ user, familyId, onLogout, onLeaveFamily }) {
       }}>
         <BottomNavBtn active={tab === "dashboard"} onClick={() => setTab("dashboard")} icon="🏠" label="ホーム" />
         <BottomNavBtn active={tab === "schedule"} onClick={() => setTab("schedule")} icon="📅" label="予定" />
-        <BottomNavBtn active={tab === "checklist"} onClick={() => setTab("checklist")} icon="✅" label="持ち物" />
         <BottomNavBtn active={tab === "history"} onClick={() => setTab("history")} icon="🏆" label="成績" />
         <BottomNavBtn active={tab === "links"} onClick={() => setTab("links")} icon="🔗" label="リンク" />
       </div>
