@@ -633,6 +633,24 @@ function MultiEntryPicker({ entries, onChange, childColor }) {
 // ===== SETTINGS MODAL =====
 function SettingsModal({ open, onClose }) {
   const { colorScheme, setColorScheme, darkMode, setDarkMode, theme, accent } = useTheme();
+  const [notifPermission, setNotifPermission] = useState(
+    typeof Notification !== "undefined" ? Notification.permission : "denied"
+  );
+
+  const requestNotification = async () => {
+    if (!("Notification" in window)) {
+      alert("このブラウザは通知に対応していません");
+      return;
+    }
+    const permission = await Notification.requestPermission();
+    setNotifPermission(permission);
+    if (permission === "granted") {
+      new Notification("通知が有効になりました！", {
+        body: "大会前日や締切前にお知らせします",
+        icon: "/icon.svg",
+      });
+    }
+  };
 
   if (!open) return null;
 
@@ -697,6 +715,47 @@ function SettingsModal({ open, onClose }) {
             {darkMode ? "オン" : "オフ"}
           </span>
         </button>
+      </div>
+
+      <div style={{ marginBottom: 16 }}>
+        <label style={{ display: "block", marginBottom: 10, fontSize: 13, fontWeight: 700, color: darkMode ? "#f3f4f6" : "#1e293b", fontFamily: FONT }}>
+          🔔 プッシュ通知
+        </label>
+        <button
+          onClick={requestNotification}
+          disabled={notifPermission === "granted"}
+          style={{
+            display: "flex", alignItems: "center", gap: 12, padding: "12px 16px",
+            borderRadius: 12,
+            border: `2px solid ${notifPermission === "granted" ? "#22c55e" : (darkMode ? "#374151" : "#e2e8f0")}`,
+            background: notifPermission === "granted" ? "#22c55e20" : (darkMode ? "#1f2937" : "#fff"),
+            cursor: notifPermission === "granted" ? "default" : "pointer",
+            fontFamily: FONT, width: "100%",
+            transition: "all 0.2s ease",
+          }}
+        >
+          <div style={{
+            width: 36, height: 36, borderRadius: 10,
+            background: notifPermission === "granted" ? "#22c55e" : (darkMode ? "#374151" : "#e2e8f0"),
+            display: "flex", alignItems: "center", justifyContent: "center",
+            fontSize: 18,
+          }}>
+            {notifPermission === "granted" ? "✅" : "🔔"}
+          </div>
+          <div style={{ flex: 1, textAlign: "left" }}>
+            <div style={{ fontSize: 13, fontWeight: 600, color: darkMode ? "#f3f4f6" : "#1e293b" }}>
+              {notifPermission === "granted" ? "通知オン" : notifPermission === "denied" ? "通知がブロックされています" : "通知を有効にする"}
+            </div>
+            <div style={{ fontSize: 10, color: darkMode ? "#9ca3af" : "#64748b" }}>
+              {notifPermission === "granted" ? "大会前日・締切前にお知らせ" : "タップして許可してください"}
+            </div>
+          </div>
+        </button>
+        {notifPermission === "denied" && (
+          <p style={{ fontSize: 10, color: "#ef4444", marginTop: 6 }}>
+            ブラウザの設定から通知を許可してください
+          </p>
+        )}
       </div>
 
       <div style={{
@@ -851,6 +910,59 @@ function AppContent({ user, familyId, onLogout, onLeaveFamily }) {
     }));
     return () => unsubs.forEach(u => u());
   }, [familyId]);
+
+  // Notification check
+  useEffect(() => {
+    if (!data || !data.competitions) return;
+
+    const checkNotifications = async () => {
+      // Check if notifications are supported and permitted
+      if (!("Notification" in window)) return;
+      if (Notification.permission !== "granted") return;
+
+      const now = new Date();
+      const today = now.toISOString().split("T")[0];
+      const notifiedKey = "dance-notified-" + today;
+      const alreadyNotified = localStorage.getItem(notifiedKey);
+      if (alreadyNotified) return;
+
+      const alerts = [];
+
+      data.competitions.forEach(comp => {
+        const compDate = new Date(comp.date + "T00:00:00");
+        const daysUntil = Math.ceil((compDate - now) / 86400000);
+
+        // 大会前日
+        if (daysUntil === 1) {
+          alerts.push(`🎯 明日は「${comp.name}」です！`);
+        }
+        // 大会当日
+        if (daysUntil === 0) {
+          alerts.push(`🔴 今日は「${comp.name}」当日です！`);
+        }
+
+        // エントリー締切3日前
+        if (comp.entryDeadline && !comp.entryDone) {
+          const deadlineDate = new Date(comp.entryDeadline + "T23:59:59");
+          const daysUntilDeadline = Math.ceil((deadlineDate - now) / 86400000);
+          if (daysUntilDeadline >= 0 && daysUntilDeadline <= 3) {
+            alerts.push(`⚠️ 「${comp.name}」の締切まであと${daysUntilDeadline}日！`);
+          }
+        }
+      });
+
+      if (alerts.length > 0) {
+        localStorage.setItem(notifiedKey, "true");
+        new Notification("ダンス大会マネージャー", {
+          body: alerts.join("\n"),
+          icon: "/icon.svg",
+          tag: "dance-reminder",
+        });
+      }
+    };
+
+    checkNotifications();
+  }, [data]);
 
   // Children
   const addChild = async (n) => {
@@ -1821,6 +1933,8 @@ function AppContent({ user, familyId, onLogout, onLeaveFamily }) {
             {[
               { url: "https://www.jdsf.or.jp/", icon: "🏛️", title: "JDSF公式サイト", desc: "日本ダンススポーツ連盟の公式ページ", bg: `linear-gradient(135deg,${theme.primary},${theme.secondary})` },
               { url: "https://adm.jdsf.jp/", icon: "📋", title: "最新の競技会情報（JDSF）", desc: "大会スケジュール・エントリー情報", bg: `linear-gradient(135deg,${accent},#ef4444)` },
+              { url: "https://www.youtube.com/@DanceSport_Japan", icon: "🎬", title: "JDSF公式YouTube", desc: "大会動画・ハイライト", bg: "linear-gradient(135deg,#ef4444,#dc2626)" },
+              { url: "https://www.youtube.com/@jdsf5844", icon: "🎬", title: "JDSF関東甲信越YouTube", desc: "関東甲信越ブロックの大会動画", bg: "linear-gradient(135deg,#f97316,#ea580c)" },
               { url: "https://jbdf-ejd.gr.jp/", icon: "🏛️", title: "JBDF公式サイト", desc: "日本ボールルームダンス連盟", bg: "linear-gradient(135deg,#3b82f6,#1d4ed8)" },
               { url: "http://dtsdance.blog.fc2.com/", icon: "💃", title: "D.T.S相模原", desc: "ダンスサークル情報", bg: "linear-gradient(135deg,#ec4899,#db2777)" },
             ].map((link, idx) => (
