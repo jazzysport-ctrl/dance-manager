@@ -636,19 +636,35 @@ function SettingsModal({ open, onClose }) {
   const [notifPermission, setNotifPermission] = useState(
     typeof Notification !== "undefined" ? Notification.permission : "denied"
   );
+  const [notifEnabled, setNotifEnabled] = useState(() => {
+    return localStorage.getItem("dance-notif-enabled") === "true";
+  });
 
-  const requestNotification = async () => {
+  const toggleNotification = async () => {
     if (!("Notification" in window)) {
       alert("このブラウザは通知に対応していません");
       return;
     }
-    const permission = await Notification.requestPermission();
-    setNotifPermission(permission);
-    if (permission === "granted") {
+
+    if (!notifEnabled) {
+      // Turn on
+      if (Notification.permission !== "granted") {
+        const permission = await Notification.requestPermission();
+        setNotifPermission(permission);
+        if (permission !== "granted") {
+          return;
+        }
+      }
+      localStorage.setItem("dance-notif-enabled", "true");
+      setNotifEnabled(true);
       new Notification("通知が有効になりました！", {
-        body: "大会前日や締切前にお知らせします",
+        body: "エントリー締切前にお知らせします",
         icon: "/icon.svg",
       });
+    } else {
+      // Turn off
+      localStorage.setItem("dance-notif-enabled", "false");
+      setNotifEnabled(false);
     }
   };
 
@@ -719,35 +735,43 @@ function SettingsModal({ open, onClose }) {
 
       <div style={{ marginBottom: 16 }}>
         <label style={{ display: "block", marginBottom: 10, fontSize: 13, fontWeight: 700, color: darkMode ? "#f3f4f6" : "#1e293b", fontFamily: FONT }}>
-          🔔 プッシュ通知
+          🔔 締切リマインダー通知
         </label>
         <button
-          onClick={requestNotification}
-          disabled={notifPermission === "granted"}
+          onClick={toggleNotification}
+          disabled={notifPermission === "denied"}
           style={{
             display: "flex", alignItems: "center", gap: 12, padding: "12px 16px",
             borderRadius: 12,
-            border: `2px solid ${notifPermission === "granted" ? "#22c55e" : (darkMode ? "#374151" : "#e2e8f0")}`,
-            background: notifPermission === "granted" ? "#22c55e20" : (darkMode ? "#1f2937" : "#fff"),
-            cursor: notifPermission === "granted" ? "default" : "pointer",
+            border: `2px solid ${notifEnabled ? "#22c55e" : (darkMode ? "#374151" : "#e2e8f0")}`,
+            background: notifEnabled ? "#22c55e20" : (darkMode ? "#1f2937" : "#fff"),
+            cursor: notifPermission === "denied" ? "not-allowed" : "pointer",
             fontFamily: FONT, width: "100%",
             transition: "all 0.2s ease",
+            opacity: notifPermission === "denied" ? 0.5 : 1,
           }}
         >
           <div style={{
-            width: 36, height: 36, borderRadius: 10,
-            background: notifPermission === "granted" ? "#22c55e" : (darkMode ? "#374151" : "#e2e8f0"),
-            display: "flex", alignItems: "center", justifyContent: "center",
-            fontSize: 18,
+            width: 48, height: 26, borderRadius: 13,
+            background: notifEnabled ? "#22c55e" : (darkMode ? "#374151" : "#e2e8f0"),
+            position: "relative",
+            transition: "background 0.3s ease",
           }}>
-            {notifPermission === "granted" ? "✅" : "🔔"}
+            <div style={{
+              width: 22, height: 22, borderRadius: "50%",
+              background: "#fff",
+              position: "absolute", top: 2,
+              left: notifEnabled ? 24 : 2,
+              transition: "left 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+              boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
+            }} />
           </div>
           <div style={{ flex: 1, textAlign: "left" }}>
             <div style={{ fontSize: 13, fontWeight: 600, color: darkMode ? "#f3f4f6" : "#1e293b" }}>
-              {notifPermission === "granted" ? "通知オン" : notifPermission === "denied" ? "通知がブロックされています" : "通知を有効にする"}
+              {notifEnabled ? "オン" : "オフ"}
             </div>
             <div style={{ fontSize: 10, color: darkMode ? "#9ca3af" : "#64748b" }}>
-              {notifPermission === "granted" ? "大会前日・締切前にお知らせ" : "タップして許可してください"}
+              エントリー締切3日前にお知らせ
             </div>
           </div>
         </button>
@@ -911,11 +935,15 @@ function AppContent({ user, familyId, onLogout, onLeaveFamily }) {
     return () => unsubs.forEach(u => u());
   }, [familyId]);
 
-  // Notification check
+  // Notification check - 締切通知のみ
   useEffect(() => {
     if (!data || !data.competitions) return;
 
     const checkNotifications = async () => {
+      // Check if notifications are enabled
+      const notifEnabled = localStorage.getItem("dance-notif-enabled") === "true";
+      if (!notifEnabled) return;
+
       // Check if notifications are supported and permitted
       if (!("Notification" in window)) return;
       if (Notification.permission !== "granted") return;
@@ -929,34 +957,26 @@ function AppContent({ user, familyId, onLogout, onLeaveFamily }) {
       const alerts = [];
 
       data.competitions.forEach(comp => {
-        const compDate = new Date(comp.date + "T00:00:00");
-        const daysUntil = Math.ceil((compDate - now) / 86400000);
-
-        // 大会前日
-        if (daysUntil === 1) {
-          alerts.push(`🎯 明日は「${comp.name}」です！`);
-        }
-        // 大会当日
-        if (daysUntil === 0) {
-          alerts.push(`🔴 今日は「${comp.name}」当日です！`);
-        }
-
-        // エントリー締切3日前
+        // エントリー締切3日前以内のみ通知
         if (comp.entryDeadline && !comp.entryDone) {
           const deadlineDate = new Date(comp.entryDeadline + "T23:59:59");
           const daysUntilDeadline = Math.ceil((deadlineDate - now) / 86400000);
           if (daysUntilDeadline >= 0 && daysUntilDeadline <= 3) {
-            alerts.push(`⚠️ 「${comp.name}」の締切まであと${daysUntilDeadline}日！`);
+            if (daysUntilDeadline === 0) {
+              alerts.push(`🔴 「${comp.name}」の締切は今日です！`);
+            } else {
+              alerts.push(`⚠️ 「${comp.name}」の締切まであと${daysUntilDeadline}日`);
+            }
           }
         }
       });
 
       if (alerts.length > 0) {
         localStorage.setItem(notifiedKey, "true");
-        new Notification("ダンス大会マネージャー", {
+        new Notification("締切リマインダー", {
           body: alerts.join("\n"),
           icon: "/icon.svg",
-          tag: "dance-reminder",
+          tag: "dance-deadline",
         });
       }
     };
