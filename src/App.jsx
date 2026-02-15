@@ -794,6 +794,51 @@ function SettingsModal({ open, onClose }) {
   );
 }
 
+// ===== PHOTO MODAL =====
+function PhotoModal({ photo, onClose }) {
+  const { darkMode } = useTheme();
+
+  if (!photo) return null;
+
+  return (
+    <div
+      onClick={onClose}
+      style={{
+        position: "fixed", inset: 0, zIndex: 1100,
+        background: "rgba(0,0,0,0.9)",
+        display: "flex", alignItems: "center", justifyContent: "center",
+        padding: 16,
+        animation: "fadeIn 0.2s ease",
+      }}
+    >
+      <button
+        onClick={onClose}
+        style={{
+          position: "absolute", top: 16, right: 16,
+          width: 40, height: 40, borderRadius: "50%",
+          background: "rgba(255,255,255,0.2)", border: "none",
+          color: "#fff", fontSize: 20, cursor: "pointer",
+          display: "flex", alignItems: "center", justifyContent: "center",
+        }}
+      >
+        ✕
+      </button>
+      <img
+        src={photo}
+        alt=""
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          maxWidth: "90%",
+          maxHeight: "85vh",
+          borderRadius: 12,
+          objectFit: "contain",
+          animation: "scaleIn 0.2s ease",
+        }}
+      />
+    </div>
+  );
+}
+
 // ===== HELP MODAL =====
 function HelpModal({ open, onClose }) {
   const { darkMode, theme, accent } = useTheme();
@@ -901,6 +946,7 @@ function AppContent({ user, familyId, onLogout, onLeaveFamily }) {
   const [touchStart, setTouchStart] = useState(null);
   const [showSettings, setShowSettings] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
+  const [viewPhoto, setViewPhoto] = useState(null);
 
   const tabs = ["dashboard", "schedule", "history", "links"];
   const handleSwipe = (direction) => {
@@ -1177,6 +1223,9 @@ function AppContent({ user, familyId, onLogout, onLeaveFamily }) {
 
       {/* HELP MODAL */}
       <HelpModal open={showHelp} onClose={() => setShowHelp(false)} />
+
+      {/* PHOTO MODAL */}
+      <PhotoModal photo={viewPhoto} onClose={() => setViewPhoto(null)} />
 
       {/* HEADER */}
       <div style={{
@@ -1870,7 +1919,18 @@ function AppContent({ user, familyId, onLogout, onLeaveFamily }) {
                       {(entry.photos || []).length > 0 && (
                         <div style={{ display: "flex", gap: 5, marginTop: 7, overflowX: "auto" }}>
                           {entry.photos.map((p, pi) => (
-                            <img key={pi} src={p} alt="" style={{ width: 70, height: 70, objectFit: "cover", borderRadius: 9 }} />
+                            <img
+                              key={pi}
+                              src={p}
+                              alt=""
+                              onClick={() => setViewPhoto(p)}
+                              style={{
+                                width: 70, height: 70, objectFit: "cover", borderRadius: 9,
+                                cursor: "pointer", transition: "transform 0.2s ease",
+                              }}
+                              onMouseOver={e => e.currentTarget.style.transform = "scale(1.05)"}
+                              onMouseOut={e => e.currentTarget.style.transform = "scale(1)"}
+                            />
                           ))}
                         </div>
                       )}
