@@ -841,12 +841,15 @@ function AppContent({ user, familyId, onLogout, onLeaveFamily }) {
         <p style={{ margin: "5px 0 0", fontSize: 11, opacity: 0.8, letterSpacing: 2 }}>COMPETITION & SCHEDULE</p>
         {user && (
           <div style={{ position: "absolute", top: 8, right: 12, display: "flex", gap: 6, alignItems: "center" }}>
-            <span style={{ fontSize: 10, opacity: 0.7 }}>{user.displayName}</span>
             <button onClick={() => setShowSettings(true)} style={{ background: "rgba(255,255,255,0.2)", border: "none", borderRadius: 8, padding: "3px 8px", color: "#fff", fontSize: 10, cursor: "pointer", fontFamily: FONT, transition: "transform 0.2s ease" }}>⚙️</button>
             <button onClick={onLeaveFamily} style={{ background: "rgba(255,255,255,0.2)", border: "none", borderRadius: 8, padding: "3px 8px", color: "#fff", fontSize: 10, cursor: "pointer", fontFamily: FONT, transition: "transform 0.2s ease" }}>切替</button>
             <button onClick={onLogout} style={{ background: "rgba(255,255,255,0.2)", border: "none", borderRadius: 8, padding: "3px 8px", color: "#fff", fontSize: 10, cursor: "pointer", fontFamily: FONT, transition: "transform 0.2s ease" }}>ログアウト</button>
           </div>
         )}
+        {/* Created by Dan - 目立たない表示 */}
+        <div style={{ position: "absolute", bottom: 4, right: 8, fontSize: 8, opacity: 0.4, color: "#fff" }}>
+          by Dan
+        </div>
         {familyId && (
           <div style={{ position: "absolute", top: 8, left: 12, display: "flex", gap: 4, alignItems: "center" }}>
             <button
@@ -869,18 +872,36 @@ function AppContent({ user, familyId, onLogout, onLeaveFamily }) {
           </div>
         )}
         {data.children.length > 0 ? (
-          <div style={{ display: "flex", gap: 5, justifyContent: "center", marginTop: 8, flexWrap: "wrap" }}>
+          <div style={{ display: "flex", gap: 5, justifyContent: "center", marginTop: 8, flexWrap: "wrap", position: "relative", zIndex: 10 }}>
             {data.children.map((c, i) => (
               <span key={c} style={{ background: "rgba(255,255,255,0.2)", padding: "2px 9px", borderRadius: 12, fontSize: 11, fontWeight: 600, animation: "slideUp 0.3s ease " + (i * 0.05) + "s both" }}>
                 {EMOJIS[i % 5]} {c}
               </span>
             ))}
-            <button onClick={() => { setForm({ nc: "" }); setModal({ type: "kid" }); }} style={{ background: "rgba(255,255,255,0.15)", border: "1px dashed rgba(255,255,255,0.5)", padding: "2px 9px", borderRadius: 12, fontSize: 11, color: "#fff", cursor: "pointer", fontFamily: FONT, transition: "transform 0.2s ease" }}>
+            <button
+              onClick={() => { setForm({ nc: "" }); setModal({ type: "kid" }); }}
+              onTouchEnd={(e) => { e.preventDefault(); setForm({ nc: "" }); setModal({ type: "kid" }); }}
+              style={{
+                background: "rgba(255,255,255,0.25)", border: "1px dashed rgba(255,255,255,0.6)",
+                padding: "4px 12px", borderRadius: 12, fontSize: 11, color: "#fff",
+                cursor: "pointer", fontFamily: FONT, transition: "all 0.2s ease",
+                minHeight: 28, touchAction: "manipulation",
+              }}
+            >
               ＋管理
             </button>
           </div>
         ) : (
-          <button onClick={() => { setForm({ nc: "" }); setModal({ type: "kid" }); }} style={{ marginTop: 8, background: "rgba(255,255,255,0.2)", border: "1px dashed rgba(255,255,255,0.5)", padding: "5px 14px", borderRadius: 12, fontSize: 12, color: "#fff", cursor: "pointer", fontFamily: FONT, fontWeight: 600, transition: "transform 0.2s ease" }}>
+          <button
+            onClick={() => { setForm({ nc: "" }); setModal({ type: "kid" }); }}
+            onTouchEnd={(e) => { e.preventDefault(); setForm({ nc: "" }); setModal({ type: "kid" }); }}
+            style={{
+              marginTop: 8, background: "rgba(255,255,255,0.2)", border: "1px dashed rgba(255,255,255,0.5)",
+              padding: "8px 16px", borderRadius: 12, fontSize: 12, color: "#fff",
+              cursor: "pointer", fontFamily: FONT, fontWeight: 600, transition: "transform 0.2s ease",
+              minHeight: 36, touchAction: "manipulation",
+            }}
+          >
             👧 まずお子さんを登録→
           </button>
         )}
