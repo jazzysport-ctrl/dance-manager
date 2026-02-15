@@ -1125,7 +1125,15 @@ function AppContent({ user, familyId, onLogout, onLeaveFamily }) {
                   <div style={{ fontSize: 18, fontWeight: 900, marginBottom: 4 }}>{nextComp.name}</div>
                   <div style={{ fontSize: 12, opacity: 0.9, marginBottom: 8 }}>
                     📅 {nextComp.date}
-                    {nextComp.venue && <span> ・ 📍 {nextComp.venue}</span>}
+                    {nextComp.venue && (
+                      <span> ・ <a
+                        href={"https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(nextComp.venue)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{ color: "#fff", textDecoration: "underline", opacity: 1 }}
+                        onClick={(e) => e.stopPropagation()}
+                      >📍 {nextComp.venue}</a></span>
+                    )}
                   </div>
                   <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
                     <Countdown date={nextComp.date} />
