@@ -125,9 +125,11 @@ function exportToCalendar(comp) {
     comp.venue ? `会場: ${comp.venue}` : '',
     comp.compClass ? `クラス: ${comp.compClass}` : '',
     comp.notes ? `メモ: ${comp.notes}` : '',
-    (comp.childEntries || []).map(ce =>
-      ce.sections?.length ? `${ce.child}: ${ce.sections.map(s => s.section).join('・')}` : ''
-    ).filter(Boolean).join('\\n'),
+    (comp.childEntries || []).map(ce => {
+      // 新形式(entries)と旧形式(sections)の両方に対応
+      const entries = ce.entries || (ce.sections || []).map(s => ({ section: s.section, entryClass: comp.compClass }));
+      return entries.length ? `${ce.child}: ${entries.map(e => `${e.entryClass || ""}${e.section}`).join('・')}` : '';
+    }).filter(Boolean).join('\\n'),
   ].filter(Boolean).join('\\n');
 
   const icsContent = [
@@ -504,6 +506,131 @@ function ClassPicker({ value, onChange }) {
   );
 }
 
+// 複数エントリー対応のピッカー
+function MultiEntryPicker({ entries, onChange, childColor }) {
+  const { darkMode } = useTheme();
+
+  const addEntry = () => {
+    onChange([...entries, { entryClass: "", section: "", dances: [] }]);
+  };
+
+  const removeEntry = (idx) => {
+    onChange(entries.filter((_, i) => i !== idx));
+  };
+
+  const updateEntry = (idx, updates) => {
+    const newEntries = [...entries];
+    newEntries[idx] = { ...newEntries[idx], ...updates };
+    onChange(newEntries);
+  };
+
+  return (
+    <div>
+      {entries.map((entry, idx) => (
+        <div key={idx} style={{
+          marginBottom: 8, padding: 10, borderRadius: 10,
+          background: darkMode ? "#374151" : "#f8fafc",
+          border: `1px solid ${darkMode ? "#4b5563" : "#e2e8f0"}`,
+          position: "relative",
+        }}>
+          {entries.length > 1 && (
+            <button
+              onClick={() => removeEntry(idx)}
+              style={{
+                position: "absolute", top: 4, right: 4,
+                width: 20, height: 20, borderRadius: "50%",
+                border: "none", background: "#ef4444", color: "#fff",
+                fontSize: 10, cursor: "pointer", fontFamily: FONT,
+              }}
+            >✕</button>
+          )}
+
+          <div style={{ fontSize: 10, fontWeight: 600, color: childColor, marginBottom: 6 }}>
+            エントリー {idx + 1}
+          </div>
+
+          {/* クラス選択 */}
+          <div style={{ marginBottom: 8 }}>
+            <div style={{ fontSize: 10, color: darkMode ? "#9ca3af" : "#64748b", marginBottom: 3 }}>クラス</div>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 3 }}>
+              {CLASSES.map(c => (
+                <button key={c} onClick={() => updateEntry(idx, { entryClass: entry.entryClass === c ? "" : c })} style={{
+                  padding: "3px 8px", borderRadius: 12, fontSize: 9, fontWeight: 600,
+                  cursor: "pointer", fontFamily: FONT,
+                  border: `1px solid ${entry.entryClass === c ? "#f59e0b" : (darkMode ? "#4b5563" : "#e2e8f0")}`,
+                  background: entry.entryClass === c ? "#f59e0b" : (darkMode ? "#1f2937" : "#fff"),
+                  color: entry.entryClass === c ? "#fff" : (darkMode ? "#d1d5db" : "#64748b"),
+                }}>
+                  {c}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* セクション選択 */}
+          <div style={{ marginBottom: 6 }}>
+            <div style={{ fontSize: 10, color: darkMode ? "#9ca3af" : "#64748b", marginBottom: 3 }}>部門</div>
+            <div style={{ display: "flex", gap: 6 }}>
+              {Object.keys(SECTIONS).map(sec => {
+                const isActive = entry.section === sec;
+                return (
+                  <button key={sec} onClick={() => updateEntry(idx, { section: isActive ? "" : sec, dances: [] })} style={{
+                    padding: "4px 10px", borderRadius: 10, fontSize: 10, fontWeight: 600,
+                    cursor: "pointer", fontFamily: FONT,
+                    border: `2px solid ${isActive ? (sec === "ラテン" ? "#f97316" : "#6366f1") : (darkMode ? "#4b5563" : "#e2e8f0")}`,
+                    background: isActive
+                      ? (sec === "ラテン" ? "linear-gradient(135deg,#f97316,#ef4444)" : "linear-gradient(135deg,#6366f1,#8b5cf6)")
+                      : (darkMode ? "#1f2937" : "#fff"),
+                    color: isActive ? "#fff" : (darkMode ? "#d1d5db" : "#64748b"),
+                  }}>
+                    {sec === "ラテン" ? "🔥" : "✨"} {sec}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* 種目選択 */}
+          {entry.section && (
+            <div>
+              <div style={{ fontSize: 10, color: darkMode ? "#9ca3af" : "#64748b", marginBottom: 3 }}>種目</div>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 3 }}>
+                {SECTIONS[entry.section].map(d => {
+                  const sel = (entry.dances || []).includes(d);
+                  return (
+                    <button key={d} onClick={() => {
+                      const newDances = sel ? entry.dances.filter(x => x !== d) : [...(entry.dances || []), d];
+                      updateEntry(idx, { dances: newDances });
+                    }} style={{
+                      padding: "2px 7px", borderRadius: 10, fontSize: 9, fontWeight: 600,
+                      cursor: "pointer", fontFamily: FONT,
+                      border: `1px solid ${sel ? (entry.section === "ラテン" ? "#f97316" : "#6366f1") : (darkMode ? "#4b5563" : "#e2e8f0")}`,
+                      background: sel ? (entry.section === "ラテン" ? "#f97316" : "#6366f1") : (darkMode ? "#1f2937" : "#fff"),
+                      color: sel ? "#fff" : (darkMode ? "#d1d5db" : "#64748b"),
+                    }}>
+                      {d}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </div>
+      ))}
+
+      <button onClick={addEntry} style={{
+        width: "100%", padding: "8px 12px", borderRadius: 10,
+        border: `1px dashed ${darkMode ? "#4b5563" : "#cbd5e1"}`,
+        background: "transparent", color: darkMode ? "#9ca3af" : "#64748b",
+        fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: FONT,
+        transition: "all 0.2s ease",
+      }}>
+        ＋ エントリーを追加（複数クラス出場時）
+      </button>
+    </div>
+  );
+}
+
 // ===== SETTINGS MODAL =====
 function SettingsModal({ open, onClose }) {
   const { colorScheme, setColorScheme, darkMode, setDarkMode, theme, accent } = useTheme();
@@ -792,14 +919,14 @@ function AppContent({ user, familyId, onLogout, onLeaveFamily }) {
 
   // Helper: update child entry in form
   const updateFormCE = (child, updates) => {
-    const entries = [...(form.childEntries || [])];
-    const idx = entries.findIndex(e => e.child === child);
+    const childEntries = [...(form.childEntries || [])];
+    const idx = childEntries.findIndex(e => e.child === child);
     if (idx >= 0) {
-      entries[idx] = { ...entries[idx], ...updates };
+      childEntries[idx] = { ...childEntries[idx], ...updates };
     } else {
-      entries.push({ child, sections: [], results: {}, memo: "", ...updates });
+      childEntries.push({ child, entries: [], results: {}, memo: "", ...updates });
     }
-    setForm({ ...form, childEntries: entries });
+    setForm({ ...form, childEntries });
   };
 
   return (
@@ -1248,11 +1375,17 @@ function AppContent({ user, familyId, onLogout, onLeaveFamily }) {
                           {"🎽 No." + comp.bibNumber}
                         </span>
                       )}
-                      {(comp.childEntries || []).map(ce => ce.sections && ce.sections.length > 0 && (
-                        <div key={ce.child} style={{ fontSize: 10, color: theme.primary, marginTop: 2 }}>
-                          {ce.child + ": " + ce.sections.map(s => s.section).join("・")}
-                        </div>
-                      ))}
+                      {(comp.childEntries || []).map(ce => {
+                        // 新形式(entries)と旧形式(sections)の両方に対応
+                        const entries = ce.entries || (ce.sections || []).map(s => ({ section: s.section, entryClass: comp.compClass, dances: s.dances }));
+                        const validEntries = entries.filter(e => e.section);
+                        if (validEntries.length === 0) return null;
+                        return (
+                          <div key={ce.child} style={{ fontSize: 10, color: theme.primary, marginTop: 2 }}>
+                            {ce.child}: {validEntries.map(e => `${e.entryClass ? e.entryClass + " " : ""}${e.section}`).join("、")}
+                          </div>
+                        );
+                      })}
                       {comp.notes && <div style={{ fontSize: 10, color: darkMode ? "#6b7280" : "#94a3b8", marginTop: 2 }}>{"📝 " + comp.notes}</div>}
                     </div>
                     <div style={{ textAlign: "right", marginLeft: 8, flexShrink: 0 }}>
@@ -1470,21 +1603,34 @@ function AppContent({ user, familyId, onLogout, onLeaveFamily }) {
                       </div>
                       {filtered.map(ce => {
                         const ci = data.children.indexOf(ce.child);
+                        // 後方互換: 古いsections形式をentries形式に変換
+                        const entries = ce.entries || (ce.sections || []).map(s => ({
+                          entryClass: "",
+                          section: s.section,
+                          dances: s.dances || [],
+                        }));
                         return (
                           <div key={ce.child} style={{ marginTop: 7, padding: "7px 9px", background: darkMode ? "#374151" : "#f8fafc", borderRadius: 9, borderLeft: "3px solid " + COLORS[ci >= 0 ? ci % 5 : 0] }}>
                             <div style={{ fontSize: 11, fontWeight: 700, color: darkMode ? "#d1d5db" : "#475569", marginBottom: 3 }}>
                               {EMOJIS[ci >= 0 ? ci % 5 : 0] + " " + ce.child}
                             </div>
-                            {(ce.sections || []).map(s => (
-                              <div key={s.section} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 11, marginBottom: 1 }}>
-                                <span style={{ color: darkMode ? "#9ca3af" : "#64748b" }}>
-                                  {(s.section === "ラテン" ? "🔥" : "✨") + s.section + "（" + (s.dances || []).join("・") + "）"}
-                                </span>
-                                <span style={{ fontWeight: 700, fontSize: 12, color: (ce.results && ce.results[s.section] && ce.results[s.section].includes("優勝")) ? "#fbbf24" : (darkMode ? "#d1d5db" : "#475569") }}>
-                                  {(ce.results && ce.results[s.section]) || "—"}
-                                </span>
-                              </div>
-                            ))}
+                            {entries.filter(e => e.section).map((e, eidx) => {
+                              const entryKey = `${e.entryClass || ""}${e.section}`;
+                              // 後方互換: 古い形式のresultsキー(section名のみ)も確認
+                              const result = (ce.results && (ce.results[entryKey] || ce.results[e.section])) || "—";
+                              return (
+                                <div key={eidx} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 11, marginBottom: 2 }}>
+                                  <span style={{ color: darkMode ? "#9ca3af" : "#64748b" }}>
+                                    {(e.section === "ラテン" ? "🔥" : "✨")}
+                                    {e.entryClass ? e.entryClass + " " : ""}{e.section}
+                                    {(e.dances || []).length > 0 && `（${e.dances.join("・")}）`}
+                                  </span>
+                                  <span style={{ fontWeight: 700, fontSize: 12, color: result.includes("優勝") ? "#fbbf24" : (darkMode ? "#d1d5db" : "#475569") }}>
+                                    {result}
+                                  </span>
+                                </div>
+                              );
+                            })}
                             {ce.memo && <div style={{ fontSize: 10, color: darkMode ? "#6b7280" : "#64748b", marginTop: 3 }}>{"💭 " + ce.memo}</div>}
                           </div>
                         );
@@ -1618,19 +1764,33 @@ function AppContent({ user, familyId, onLogout, onLeaveFamily }) {
 
         {data.children.length > 0 && (
           <div style={{ marginBottom: 12 }}>
-            <label style={{ display: "block", marginBottom: 5, fontSize: 12, fontWeight: 600, color: "#475569", fontFamily: FONT }}>
-              お子さんごとの出場部門
+            <label style={{ display: "block", marginBottom: 5, fontSize: 12, fontWeight: 600, color: darkMode ? "#d1d5db" : "#475569", fontFamily: FONT }}>
+              お子さんごとの出場エントリー
             </label>
             {data.children.map((child, ci) => {
-              const ce = (form.childEntries || []).find(e => e.child === child) || { child, sections: [] };
+              const ce = (form.childEntries || []).find(e => e.child === child) || { child, entries: [] };
+              // 後方互換: 古いsections形式をentries形式に変換
+              const entries = ce.entries || (ce.sections || []).map(s => ({
+                entryClass: form.compClass || "",
+                section: s.section,
+                dances: s.dances || [],
+              }));
+              // entriesが空なら初期エントリーを1つ追加
+              const displayEntries = entries.length > 0 ? entries : [{ entryClass: "", section: "", dances: [] }];
+
               return (
-                <div key={child} style={{ marginBottom: 8, padding: 8, borderRadius: 10, border: "1px solid #e2e8f0", background: "#fafaff" }}>
-                  <div style={{ fontSize: 12, fontWeight: 700, color: COLORS[ci % 5], marginBottom: 5 }}>
-                    {EMOJIS[ci % 5] + " " + child}
+                <div key={child} style={{
+                  marginBottom: 10, padding: 10, borderRadius: 12,
+                  border: `2px solid ${COLORS[ci % 5]}40`,
+                  background: darkMode ? "#1f2937" : "#fafaff",
+                }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: COLORS[ci % 5], marginBottom: 8 }}>
+                    {EMOJIS[ci % 5]} {child}
                   </div>
-                  <SectionPicker
-                    sections={ce.sections}
-                    onChange={secs => updateFormCE(child, { sections: secs })}
+                  <MultiEntryPicker
+                    entries={displayEntries}
+                    onChange={newEntries => updateFormCE(child, { entries: newEntries })}
+                    childColor={COLORS[ci % 5]}
                   />
                 </div>
               );
@@ -1681,40 +1841,75 @@ function AppContent({ user, familyId, onLogout, onLeaveFamily }) {
 
         {data.children.length > 0 && (
           <div style={{ marginBottom: 12 }}>
-            <label style={{ display: "block", marginBottom: 5, fontSize: 12, fontWeight: 600, color: "#475569", fontFamily: FONT }}>
+            <label style={{ display: "block", marginBottom: 5, fontSize: 12, fontWeight: 600, color: darkMode ? "#d1d5db" : "#475569", fontFamily: FONT }}>
               お子さんごとの成績
             </label>
             {data.children.map((child, ci) => {
-              const ce = (form.childEntries || []).find(e => e.child === child) || { child, sections: [], results: {}, memo: "" };
+              const ce = (form.childEntries || []).find(e => e.child === child) || { child, entries: [], results: {}, memo: "" };
+              // 後方互換: 古いsections形式をentries形式に変換
+              const entries = ce.entries || (ce.sections || []).map(s => ({
+                entryClass: form.compClass || "",
+                section: s.section,
+                dances: s.dances || [],
+              }));
+              const displayEntries = entries.length > 0 ? entries : [{ entryClass: "", section: "", dances: [] }];
+
               return (
-                <div key={child} style={{ marginBottom: 10, padding: 8, borderRadius: 10, border: "1px solid #e2e8f0", background: "#fffbeb", borderLeft: "3px solid " + COLORS[ci % 5] }}>
-                  <div style={{ fontSize: 12, fontWeight: 700, color: COLORS[ci % 5], marginBottom: 5 }}>
-                    {EMOJIS[ci % 5] + " " + child}
+                <div key={child} style={{
+                  marginBottom: 10, padding: 10, borderRadius: 12,
+                  border: `2px solid ${COLORS[ci % 5]}40`,
+                  background: darkMode ? "#1f2937" : "#fffbeb",
+                }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: COLORS[ci % 5], marginBottom: 8 }}>
+                    {EMOJIS[ci % 5]} {child}
                   </div>
-                  <SectionPicker
-                    sections={ce.sections}
-                    onChange={s => updateFormCE(child, { sections: s })}
-                    accent="#f59e0b"
+
+                  <MultiEntryPicker
+                    entries={displayEntries}
+                    onChange={newEntries => updateFormCE(child, { entries: newEntries })}
+                    childColor={COLORS[ci % 5]}
                   />
-                  {ce.sections.map(s => (
-                    <div key={s.section} style={{ marginBottom: 6, paddingLeft: 6 }}>
-                      <label style={{ fontSize: 10, fontWeight: 600, color: "#92400e", marginBottom: 2, display: "block" }}>
-                        {s.section + "の成績"}
-                      </label>
-                      <select
-                        value={(ce.results && ce.results[s.section]) || ""}
-                        onChange={e => updateFormCE(child, { results: { ...(ce.results || {}), [s.section]: e.target.value } })}
-                        style={{ width: "100%", padding: "7px 9px", borderRadius: 8, border: "2px solid #fde68a", fontSize: 12, fontFamily: FONT, outline: "none", background: "#fff" }}
-                      >
-                        <option value="">選択...</option>
-                        {RESULTS.map(r => <option key={r} value={r}>{r}</option>)}
-                      </select>
-                    </div>
-                  ))}
+
+                  {/* 各エントリーの成績入力 */}
+                  {displayEntries.filter(e => e.section).map((entry, eidx) => {
+                    const entryKey = `${entry.entryClass || ""}${entry.section}`;
+                    return (
+                      <div key={eidx} style={{
+                        marginTop: 8, padding: 8, borderRadius: 8,
+                        background: darkMode ? "#374151" : "#fef3c7",
+                        border: `1px solid ${darkMode ? "#4b5563" : "#fde68a"}`,
+                      }}>
+                        <label style={{ fontSize: 10, fontWeight: 600, color: darkMode ? "#fcd34d" : "#92400e", marginBottom: 4, display: "block" }}>
+                          🏆 {entry.entryClass ? entry.entryClass + " " : ""}{entry.section} の成績
+                        </label>
+                        <select
+                          value={(ce.results && ce.results[entryKey]) || ""}
+                          onChange={e => updateFormCE(child, { results: { ...(ce.results || {}), [entryKey]: e.target.value } })}
+                          style={{
+                            width: "100%", padding: "7px 9px", borderRadius: 8,
+                            border: `2px solid ${darkMode ? "#4b5563" : "#fde68a"}`,
+                            fontSize: 12, fontFamily: FONT, outline: "none",
+                            background: darkMode ? "#1f2937" : "#fff",
+                            color: darkMode ? "#f3f4f6" : "#1e293b",
+                          }}
+                        >
+                          <option value="">選択...</option>
+                          {RESULTS.map(r => <option key={r} value={r}>{r}</option>)}
+                        </select>
+                      </div>
+                    );
+                  })}
+
                   <input
                     value={ce.memo || ""} onChange={e => updateFormCE(child, { memo: e.target.value })}
                     placeholder="💭 個人メモ..."
-                    style={{ width: "100%", padding: "6px 9px", border: "1px solid #e2e8f0", borderRadius: 7, fontSize: 11, fontFamily: FONT, outline: "none", boxSizing: "border-box", marginTop: 4 }}
+                    style={{
+                      width: "100%", padding: "6px 9px", marginTop: 8,
+                      border: `1px solid ${darkMode ? "#374151" : "#e2e8f0"}`,
+                      borderRadius: 7, fontSize: 11, fontFamily: FONT, outline: "none", boxSizing: "border-box",
+                      background: darkMode ? "#1f2937" : "#fff",
+                      color: darkMode ? "#f3f4f6" : "#1e293b",
+                    }}
                   />
                 </div>
               );
